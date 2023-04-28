@@ -43,4 +43,4 @@ column_mapping = {
   "换手率": "turnover_rate_1"
 }
 
-DEFAULT_START_COLLECT_TIME = '20230428'
+DEFAULT_START_COLLECT_TIME = '20080101'
