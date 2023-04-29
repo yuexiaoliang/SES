@@ -2,6 +2,7 @@ import { computed, watchEffect } from 'vue';
 import { defineStore } from 'pinia';
 import { useColorMode, useCycleList } from '@vueuse/core';
 import { theme } from '@/theme';
+import { Sunny, Moon } from '@element-plus/icons-vue'
 
 export const useTheme = defineStore('theme', () => {
   const mode = useColorMode({
@@ -25,5 +26,12 @@ export const useTheme = defineStore('theme', () => {
     return theme[state.value] || {};
   });
 
-  return { toggleTheme: next, themeMode: state, variables };
+  const isDark = computed(() => state.value === 'dark');
+  const isLight = computed(() => state.value === 'light');
+
+  const icon = computed(() => {
+    return isDark.value ? Sunny : Moon
+  })
+
+  return { toggle: next, mode: state, variables, isDark, isLight, icon };
 });

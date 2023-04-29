@@ -1,12 +1,18 @@
 import { Plugin } from 'vue';
 
 export const theme = {
-  'dark': {
-    '--primary': 'blue'
+  dark: {
+    '--primary': 'red',
+    '--color': '#333',
+    '--border-color': '#ccc',
+    '--body-bgc': '#f2f2f2',
   },
 
-  'light': {
-    '--primary': 'green'
+  light: {
+    '--primary': 'blue',
+    '--color': '#fff',
+    '--border-color': '#777',
+    '--body-bgc': '#333',
   }
 };
 
