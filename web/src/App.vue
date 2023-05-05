@@ -1,9 +1,8 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
-    <base-header />
-    <router-view />
+  <base-header />
+  <router-view />
 </template>
 
 <style scoped>
