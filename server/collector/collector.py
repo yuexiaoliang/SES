@@ -1,13 +1,25 @@
+import os
+import inspect
+
 import pymongo
 import efinance as ef
-import utils
-from constants import CollectedType, DEFAULT_START_COLLECT_TIME, column_mapping
-from logger import Logger
+
+from constants.constants import DEFAULT_START_COLLECT_TIME
+from constants.enums import CollectedType
+
+from utils.logger import Logger
+from utils.format import format_timestamp, get_current_time
+from utils.transform import transform_data
+
 
 client = pymongo.MongoClient('mongodb://localhost:27017')
+
 db = client.stock
 
-logger = Logger(log_file='logs/collector.log')
+log_file = os.path.join(os.path.dirname(os.path.abspath(
+    inspect.getfile(inspect.currentframe()))), 'logs/collector.log')
+
+logger = Logger(log_file=log_file)
 
 
 def update_collected_time(name):
@@ -16,10 +28,10 @@ def update_collected_time(name):
     :Parameters:
     - `type` (CollectedType): 采集类型
     """
-    time = utils.get_current_time()
+    time = get_current_time()
 
     db.timestamps.update_one({"name": name}, {"$set": {"collected_timestamp": time,
-                             "collected_time": utils.format_timestamp(time, '%Y-%m-%d %H:%M:%S')}}, upsert=True)
+                             "collected_time": format_timestamp(time, '%Y-%m-%d %H:%M:%S')}}, upsert=True)
 
 
 def get_collected_time(name):
@@ -31,7 +43,7 @@ def get_collected_time(name):
     result = db.timestamps.find_one({"name": name})
 
     try:
-        return utils.format_timestamp(result['collected_timestamp'])
+        return format_timestamp(result['collected_timestamp'])
     except:
         return DEFAULT_START_COLLECT_TIME
 
@@ -59,7 +71,7 @@ def get_realtime_stocks():
         db.stocks.drop()
 
         # 把数据插入到数据库中
-        db.stocks.insert_many(utils.transform_data(stocks_data))
+        db.stocks.insert_many(transform_data(stocks_data))
 
         # 更新采集时间
         update_collected_time(CollectedType.REALTIME_STOCKS.value)
@@ -91,7 +103,7 @@ def get_stocks_base_info(stock_codes):
         db.base_info.drop()
 
         # 把数据插入到数据库中
-        db.base_info.insert_many(utils.transform_data(base_info_data))
+        db.base_info.insert_many(transform_data(base_info_data))
 
         # 更新采集时间
         update_collected_time(CollectedType.STOCKS_BASE_INFO.value)
@@ -132,7 +144,7 @@ def get_stocks_history(stock_codes):
 
             # 把数据插入到数据库中
             db.stock_history.insert_many(
-                utils.transform_data(stock_history_data))
+                transform_data(stock_history_data))
 
             print(f"【{code}】该股票采集沪深市场 A 股日线数据完成！")
         except pymongo.errors.BulkWriteError:
@@ -154,7 +166,3 @@ def start():
     get_stocks_history(stock_codes)
 
     client.close()
-
-
-if __name__ == '__main__':
-    start()

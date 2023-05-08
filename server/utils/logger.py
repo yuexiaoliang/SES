@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 class Logger:
@@ -6,6 +7,8 @@ class Logger:
         log_format = '%(asctime)s - %(levelname)s - %(message)s'
 
         if log_file:
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
             file_handler = logging.FileHandler(
                 log_file, mode='w', encoding='utf-8')
             formatter = logging.Formatter(log_format)

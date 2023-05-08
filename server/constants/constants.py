@@ -1,13 +1,4 @@
-from enum import Enum
-
-
-class CollectedType(Enum):
-    REALTIME_STOCKS = "realtime_stocks"
-    STOCKS_BASE_INFO = "stocks_base_info"
-    STOCKS_HISTORY = "stocks_history"
-
-
-column_mapping = {
+COLUMN_MAPPING = {
     "股票代码": "code",
     "股票名称": "name",
     "涨跌幅": "chg_pct",
