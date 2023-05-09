@@ -1,3 +1,1 @@
-import collector
 
-collector.start()

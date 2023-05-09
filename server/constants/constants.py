@@ -32,8 +32,7 @@ COLUMN_MAPPING = {
     "收盘": "closing",
     "振幅": "amplitude",
     "涨跌幅": "price_chg_pct",
-    "涨跌额": "price_chg_amt",
-    "换手率": "turnover_rate_1"
+    "涨跌额": "price_chg_amt"
 }
 
 DEFAULT_START_COLLECT_TIME = '20080101'
