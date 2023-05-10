@@ -3,11 +3,11 @@ from typing import Any
 
 
 class ResponseBaseModel(BaseModel):
-    message: str
-    code: int
-
     class Config:
         orm_mode = True
+
+    message: str
+    code: int
 
 
 class ResponseListModel(BaseModel):

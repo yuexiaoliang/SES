@@ -8,7 +8,7 @@ from constants.constants import DEFAULT_START_COLLECT_TIME
 from constants.enums import CollectedType
 
 from utils.logger import Logger
-from utils.format import format_timestamp, get_current_time
+from utils.format import format_timestamp, get_current_time, clean_data_list
 from utils.transform import transform_data
 
 
@@ -71,7 +71,7 @@ def collect_realtime_stocks():
         db.stocks.drop()
 
         # 把数据插入到数据库中
-        db.stocks.insert_many(transform_data(stocks_data))
+        db.stocks.insert_many(clean_data_list(transform_data(stocks_data)))
 
         # 更新采集时间
         update_collected_time(CollectedType.REALTIME_STOCKS.value)
@@ -103,7 +103,7 @@ def collect_stocks(stock_codes=None):
         # DataFrame 转换为字典
         base_info_data = base_info_df.to_dict('records')
 
-        for item in transform_data(base_info_data):
+        for item in clean_data_list(transform_data(base_info_data)):
             code = item['code']
 
             # 如果数据库中以存在具有相同code的数据，则更新数据，否则插入数据
@@ -151,7 +151,7 @@ def collect_stocks_history(stock_codes=None):
             # DataFrame 转换为字典
             stock_history_data = value.to_dict("records")
 
-            for item in transform_data(stock_history_data):
+            for item in clean_data_list(transform_data(stock_history_data)):
                 date = item['date']
                 code = item['code']
 

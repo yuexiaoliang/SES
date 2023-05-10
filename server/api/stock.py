@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 import pymongo
 from fastapi import APIRouter
 
-from models.stock import StockResponse, StocksResponse
+from models.stock import StockResponse, StocksResponse, StockHistoryResponse
+from utils.format import convert_list_objectid_to_str, convert_dict_objectid_to_str
 
 router = APIRouter()
 
@@ -28,10 +29,6 @@ def get_stocks(page_size: int = 10, page_current: int = 1):
 
     result = list(cursor)
 
-    # 将 ObjectId 对象转换为字符串
-    for item in result:
-        item['_id'] = str(item['_id'])
-
     total = db.stocks.count_documents({})
 
     # 返回数据
@@ -39,7 +36,7 @@ def get_stocks(page_size: int = 10, page_current: int = 1):
         "total": total,
         "page_size": page_size,
         "page_current": page_current,
-        "list": result
+        "list": convert_list_objectid_to_str(result)
     }}
 
 
@@ -61,14 +58,11 @@ def get_stock(code: str):
     if not result:
         return {"message": "未找到符合条件的数据", "code": 2, "data": None}
 
-    # 将 ObjectId 对象转换为字符串
-    result['_id'] = str(result['_id'])
-
     # 返回数据
-    return {"message": "获取成功", "code": 0, "data": result}
+    return {"message": "获取成功", "code": 0, "data": convert_dict_objectid_to_str(result)}
 
 
-@router.get('/daily-data/{code}', name='获取股票日线数据')
+@router.get('/daily-data/{code}', name='获取股票日线数据', response_model=StockHistoryResponse)
 def get_daily_data(code: str, start_date: str = '', end_date: str = ''):
     ''' 获取股票日线数据
 
@@ -106,8 +100,8 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = ''):
 
     result = list(cursor)
 
-    # 将 ObjectId 对象转换为字符串
-    for item in result:
-        item['_id'] = str(item['_id'])
-
-    return result
+    return {
+        "message": "获取成功",
+        "code": 0,
+        "data": convert_list_objectid_to_str(result)
+    }
