@@ -1,22 +1,22 @@
 from datetime import datetime, timedelta
 
 import pymongo
-from fastapi import APIRouter
+from pymongo import MongoClient
+from fastapi import APIRouter, Depends
 
 from models.stock import StockResponse, StocksResponse, StockHistoryResponse
 from utils.format import convert_list_objectid_to_str, convert_dict_objectid_to_str
+from utils.database import get_mongo_client
 
 router = APIRouter()
 
 
 @router.get('/list', name='获取股票列表', response_model=StocksResponse)
-def get_stocks(page_size: int = 10, page_current: int = 1):
-    client = pymongo.MongoClient('mongodb://localhost:27017')
-
-    db = client.stock
+def get_stocks(page_size: int = 10, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
+    stocks = client.stock.stocks
 
     # 使用参数化查询，避免注入攻击
-    cursor = db.stocks.find().skip((page_current - 1) * page_size).limit(page_size)
+    cursor = stocks.find().skip((page_current - 1) * page_size).limit(page_size)
 
     # 查询结果为空时，返回默认值
     if not cursor:
@@ -29,7 +29,7 @@ def get_stocks(page_size: int = 10, page_current: int = 1):
 
     result = list(cursor)
 
-    total = db.stocks.count_documents({})
+    total = stocks.count_documents({})
 
     # 返回数据
     return {"message": "获取成功", "code": 0, "data": {
@@ -41,10 +41,8 @@ def get_stocks(page_size: int = 10, page_current: int = 1):
 
 
 @router.get('/{code}', name='根据股票 code 获取股票信息', response_model=StockResponse)
-def get_stock(code: str):
-    client = pymongo.MongoClient('mongodb://localhost:27017')
-
-    db = client.stock
+def get_stock(code: str, client: MongoClient = Depends(get_mongo_client)):
+    stocks = client['stock']['stocks']
 
     # 对 code 参数进行验证和过滤
     code = code.strip()
@@ -52,7 +50,7 @@ def get_stock(code: str):
         return {"message": "code 参数不能为空", "code": 1, "data": None}
 
     # 使用参数化查询，避免注入攻击
-    result = db.stocks.find_one({"code": {"$regex": code}})
+    result = stocks.find_one({"code": {"$regex": code}})
 
     # 查询结果为空时，返回默认值
     if not result:
@@ -63,7 +61,7 @@ def get_stock(code: str):
 
 
 @router.get('/daily-data/{code}', name='获取股票日线数据', response_model=StockHistoryResponse)
-def get_daily_data(code: str, start_date: str = '', end_date: str = ''):
+def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: MongoClient = Depends(get_mongo_client)):
     ''' 获取股票日线数据
 
     :param start_date: 开始日期，如果不传则默认为 end_date 前 30 天
@@ -78,6 +76,8 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = ''):
 
     current_time = datetime.now().date()
 
+    stock_history = client['stock']['stock_history']
+
     if not end_date:
         # 获取当前日期
         end_date = current_time.strftime('%Y-%m-%d')
@@ -86,13 +86,9 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = ''):
         # 计算10天前的日期
         start_date = (current_time - timedelta(days=30)).strftime('%Y-%m-%d')
 
-    client = pymongo.MongoClient('mongodb://localhost:27017')
-
-    db = client.stock
-
     query = {"code": {"$regex": code}, "date": {
         "$gt": start_date, "$lte": end_date}}
-    cursor = db.stock_history.find(query)
+    cursor = stock_history.find(query)
 
     # 查询结果为空时，返回默认值
     if not cursor:
