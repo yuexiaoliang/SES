@@ -2,10 +2,13 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 
+def create_mongo_client() -> MongoClient:
+    return MongoClient('mongodb://localhost:27017')
+
+
 def get_mongo_client() -> MongoClient:
     try:
-        client = MongoClient('mongodb://localhost:27017')
-        print("Connected to MongoDB")
+        client = create_mongo_client()
         yield client
     except ConnectionFailure as e:
         print("Failed to connect to MongoDB:", e)

@@ -5,16 +5,20 @@ import pymongo
 import efinance as ef
 
 from constants.constants import DEFAULT_START_COLLECT_TIME
-from constants.enums import CollectedType
+from constants.enums import DatabaseCollectionNames, DatabaseNames
 
 from utils.logger import Logger
 from utils.format import format_timestamp, get_current_time, clean_data_list
 from utils.transform import transform_data
+from utils.database import create_mongo_client
 
 
-client = pymongo.MongoClient('mongodb://localhost:27017')
+client = create_mongo_client()
+database = client[DatabaseNames.STOCK.value]
 
-db = client.stock
+timestamps_collection = database[DatabaseCollectionNames.TIMESTAMPS.value]
+stocks_collection = database[DatabaseCollectionNames.STOCKS.value]
+stocks_history_collection = database[DatabaseCollectionNames.STOCKS_HISTORY.value]
 
 log_file = os.path.join(os.path.dirname(os.path.abspath(
     inspect.getfile(inspect.currentframe()))), 'logs/collector.log')
@@ -26,11 +30,11 @@ def update_collected_time(name):
     """ 更新采集时间
 
     :Parameters:
-    - `type` (CollectedType): 采集类型
+    - `type` (DatabaseCollectionNames): 采集类型
     """
     time = get_current_time()
 
-    db.timestamps.update_one({"name": name}, {"$set": {"collected_timestamp": time,
+    timestamps_collection.update_one({"name": name}, {"$set": {"collected_timestamp": time,
                              "collected_time": format_timestamp(time, '%Y-%m-%d %H:%M:%S')}}, upsert=True)
 
 
@@ -38,9 +42,9 @@ def get_collected_time(name):
     """ 获取采集时间
 
     :Parameters:
-    - `type` (CollectedType): 采集类型
+    - `type` (DatabaseCollectionNames): 采集类型
     """
-    result = db.timestamps.find_one({"name": name})
+    result = timestamps_collection.find_one({"name": name})
 
     try:
         return format_timestamp(result['collected_timestamp'])
@@ -68,13 +72,13 @@ def collect_realtime_stocks():
         stocks_data = stocks_df.to_dict('records')
 
         # 先清空数据库集合中的所有数据
-        db.stocks.drop()
+        stocks_collection.drop()
 
         # 把数据插入到数据库中
-        db.stocks.insert_many(clean_data_list(transform_data(stocks_data)))
+        stocks_collection.insert_many(clean_data_list(transform_data(stocks_data)))
 
         # 更新采集时间
-        update_collected_time(CollectedType.REALTIME_STOCKS.value)
+        update_collected_time(DatabaseCollectionNames.STOCKS.value)
 
         print('采集 A 股最新状况完成！')
     except pymongo.errors.BulkWriteError:
@@ -108,12 +112,12 @@ def collect_stocks(stock_codes=None):
 
             # 如果数据库中以存在具有相同code的数据，则更新数据，否则插入数据
             filter = {"code": code}
-            db.stocks.update_one(filter, {"$set": item}, upsert=True)
+            stocks_collection.update_one(filter, {"$set": item}, upsert=True)
 
             print(f"【{code}】 基本信息采集完成！")
 
         # 更新采集时间
-        update_collected_time(CollectedType.STOCKS_BASE_INFO.value)
+        update_collected_time(DatabaseCollectionNames.STOCKS.value)
 
         print('A 股基本信息采集完成！')
     except pymongo.errors.BulkWriteError:
@@ -128,7 +132,7 @@ def collect_stocks_history(stock_codes=None):
         stock_codes = collect_realtime_stocks()
 
     # 采集开始时间
-    start_time = get_collected_time(CollectedType.STOCKS_HISTORY.value)
+    start_time = get_collected_time(DatabaseCollectionNames.STOCKS_HISTORY.value)
 
     print(f"采集 A 股日 K 开始时间 => {start_time}")
 
@@ -157,7 +161,7 @@ def collect_stocks_history(stock_codes=None):
 
                 # 如果数据库中以存在具有相同code和date的数据，则更新数据，否则插入数据
                 filter = {"code": code, "date": date}
-                db.stock_history.update_one(
+                stocks_history_collection.update_one(
                     filter, {"$set": item}, upsert=True)
 
                 print(f"【{code}】 {date} 日数据采集完成！")
@@ -167,7 +171,7 @@ def collect_stocks_history(stock_codes=None):
             logger.error(f"【{code}】该股票 A 股日线数据插入数据库时出错，已跳过")
 
     # 把当前的采集时间更新到数据库中
-    update_collected_time(CollectedType.STOCKS_HISTORY.value)
+    update_collected_time(DatabaseCollectionNames.STOCKS_HISTORY.value)
 
     print('采集 A 股日线数据完成！')
 

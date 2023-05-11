@@ -1,19 +1,19 @@
 from datetime import datetime, timedelta
 
-import pymongo
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 
 from models.stock import StockResponse, StocksResponse, StockHistoryResponse
 from utils.format import convert_list_objectid_to_str, convert_dict_objectid_to_str
 from utils.database import get_mongo_client
+from constants.enums import DatabaseCollectionNames, DatabaseNames
 
 router = APIRouter()
 
 
 @router.get('/list', name='获取股票列表', response_model=StocksResponse)
 def get_stocks(page_size: int = 10, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
-    stocks = client.stock.stocks
+    stocks = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
 
     # 使用参数化查询，避免注入攻击
     cursor = stocks.find().skip((page_current - 1) * page_size).limit(page_size)
@@ -42,7 +42,7 @@ def get_stocks(page_size: int = 10, page_current: int = 1, client: MongoClient =
 
 @router.get('/{code}', name='根据股票 code 获取股票信息', response_model=StockResponse)
 def get_stock(code: str, client: MongoClient = Depends(get_mongo_client)):
-    stocks = client['stock']['stocks']
+    stocks = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
 
     # 对 code 参数进行验证和过滤
     code = code.strip()
@@ -76,7 +76,7 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
 
     current_time = datetime.now().date()
 
-    stock_history = client['stock']['stock_history']
+    stock_history = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 
     if not end_date:
         # 获取当前日期
