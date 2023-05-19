@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <base-header />
+  <!-- <base-header /> -->
   <router-view />
 </template>
 
