@@ -12,31 +12,39 @@ export default (data: StockHistory[]) => {
     return [opening, closing, lowest, highest];
   });
 
-  const coefficient = Math.max(...candlestickData.map((item: any) => item[1]));;
+  const coefficient = Math.max(...candlestickData.map((item: any) => item[1]));
 
-  // X 轴数据
-  const xAxisData = data.map((item: any) => {
-    const { date } = item;
-    return date;
+  const items = [
+    ["换手率", "turnover_rate", getMax(data, "turnover_rate")],
+    ["跌涨幅", "price_chg_pct", getMax(data, "price_chg_pct")],
+    ["跌涨额", "price_chg_amt", getMax(data, "price_chg_amt")],
+    ["振幅", "amplitude", getMax(data, "amplitude")],
+    ["成交量", "volume", getMax(data, "volume")],
+    ["成交额", "turnover", getMax(data, "turnover")],
+  ];
+
+  const source: any[] = [];
+  const dimensions = ["product"].concat(items.map((item) => item[0]));
+
+  data.forEach((item) => {
+    const { closing, opening, lowest, highest, date } = item;
+    const k = [date, opening, closing, lowest, highest];
+    const option: Record<string, any> = { closing, opening, lowest, highest };
+
+    items.forEach(([cnKey, key, maxVal], index) => {
+      if (index === 0) {
+        option[cnKey] = k;
+        return;
+      }
+      option[cnKey] = (item[key] / maxVal) * coefficient;
+    });
+
+    source.push({
+      product: date,
+      ...option,
+    });
   });
-
-  // 换手率
-  const turnoverRate = normalizeData(data, "turnover_rate", coefficient);
-
-  // 振幅
-  const amplitude = normalizeData(data, "amplitude", coefficient);
-
-  // 成交量
-  const volume = normalizeData(data, "volume", coefficient);
-
-  // 成交额
-  const turnover = normalizeData(data, "turnover", coefficient);
-
-  // 跌涨幅
-  const priceChgPct = normalizeData(data, "price_chg_pct", coefficient);
-
-  // 跌涨额
-  const priceChgAmt = normalizeData(data, "price_chg_amt", coefficient);
+  console.log({ dimensions, source });
 
   return {
     title: {
@@ -49,8 +57,10 @@ export default (data: StockHistory[]) => {
         type: "cross",
       },
     },
-    legend: {
-      data: ["日K", "换手率", "跌涨幅", "跌涨额", "振幅", "成交量", "成交额"],
+    legend: {},
+    dataset: {
+      // dimensions,
+      source,
     },
     grid: {
       left: "10%",
@@ -59,7 +69,6 @@ export default (data: StockHistory[]) => {
     },
     xAxis: {
       type: "category",
-      data: xAxisData,
       boundaryGap: false,
       axisLine: { onZero: false },
       splitLine: { show: false },
@@ -80,6 +89,7 @@ export default (data: StockHistory[]) => {
         },
       },
     ],
+
     dataZoom: [
       {
         type: "inside",
@@ -94,12 +104,15 @@ export default (data: StockHistory[]) => {
         end: 100,
       },
     ],
+
     series: [
       {
-        name: "日K",
         type: "candlestick",
         yAxisIndex: 0,
-        data: candlestickData,
+        encode: {
+          x: "product",
+          y: ["opening", "closing", "highest", "lowest"],
+        },
         itemStyle: {
           color: upColor,
           color0: downColor,
@@ -112,51 +125,43 @@ export default (data: StockHistory[]) => {
             {
               name: "min line on close",
               type: "min",
-              valueDim: "close",
+              valueDim: "closing",
             },
             {
               name: "max line on close",
               type: "max",
-              valueDim: "close",
+              valueDim: "closing",
             },
           ],
         },
       },
       {
-        name: "换手率",
         type: "line",
         yAxisIndex: 1,
-        data: turnoverRate,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
         },
       },
       {
-        name: "振幅",
         type: "line",
         yAxisIndex: 1,
-        data: amplitude,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
         },
       },
       {
-        name: "成交量",
         type: "line",
         yAxisIndex: 1,
-        data: volume,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
         },
       },
       {
-        name: "成交额",
         type: "line",
         yAxisIndex: 1,
-        data: turnover,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
@@ -164,20 +169,16 @@ export default (data: StockHistory[]) => {
       },
 
       {
-        name: "跌涨幅",
         type: "line",
         yAxisIndex: 1,
-        data: priceChgPct,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
         },
       },
       {
-        name: "跌涨额",
         type: "line",
         yAxisIndex: 1,
-        data: priceChgAmt,
         smooth: true,
         lineStyle: {
           opacity: 0.5,
@@ -199,4 +200,11 @@ function normalizeData(
   return indicatorData.map((item: any) => {
     return (item / maxIndicator) * coefficient;
   });
+}
+
+function getMax(data: any[], indicator: string): number[] {
+  const indicatorData = data.map((item: any) => {
+    return item[indicator];
+  });
+  return Math.max(...indicatorData);
 }

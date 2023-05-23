@@ -20,7 +20,7 @@ const option = computed(() => {
 onMounted(() => {
   chart.value = echarts.init(chatRef.value);
 
-  setOption();
+  // setOption();
 });
 
 watch(
