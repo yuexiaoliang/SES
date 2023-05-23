@@ -18,6 +18,11 @@ export const getStockByCode = (params: GetStockByCodePathParams) => {
 };
 
 // 获取股票日线数据
-export const getStockDailyData = (params: GetStockDailyDataParams) => {
-  return http.get<StockHistory[]>(`/stock/daily-data/${params.code}`);
+export const getStockDailyData = (
+  code: string,
+  params: GetStockDailyDataParams
+) => {
+  return http.get<StockHistory[]>(`/stock/daily-data/${code}`, {
+    params,
+  });
 };

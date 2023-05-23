@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
 import * as echarts from "echarts";
+import { onMounted, ref, watch, computed, shallowRef } from "vue";
+import { StockHistory } from "@/apis/typings";
+import defineOption from "./defineOption";
 
 interface Props {
-  option: Option;
+  data: StockHistory[];
 }
-
-interface Option {}
 
 const props = defineProps<Props>();
 
 const chatRef = ref();
-const chart = ref();
+const chart = shallowRef();
+
+const option = computed(() => {
+  return defineOption(props.data);
+});
 
 onMounted(() => {
   chart.value = echarts.init(chatRef.value);
-  chart.value.setOption(props.option);
+
+  setOption();
 });
 
 watch(
-  () => props.option,
+  () => props.data,
   () => {
+    console.log(option.value);
     setOption();
+  },
+  {
+    deep: true,
   }
 );
 
@@ -40,11 +49,11 @@ function getOption() {
 
 function reset() {
   chart.value.clear();
-  chart.value.setOption(props.option);
+  chart.value.setOption(option.value);
 }
 
 function setOption() {
-  chart.value.setOption(props.option);
+  chart.value.setOption(option.value);
 }
 
 function resize() {
@@ -62,7 +71,7 @@ function dispose() {
 
 <style lang="scss" scoped>
 .chat {
-  width: 1000px;
-  height: 500px;
+  width: 800px;
+  height: 300px;
 }
 </style>

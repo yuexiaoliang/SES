@@ -201,7 +201,6 @@ export interface GetStockByCodePathParams {
 }
 
 export interface GetStockDailyDataParams {
-  code: string;
   end_date?: string;
   start_date?: string;
 }

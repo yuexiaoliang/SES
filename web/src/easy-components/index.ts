@@ -1,9 +1,8 @@
 import type { Plugin } from 'vue';
 import ThemeToggleButton from './theme-toggle-button.vue';
 import BaseHeader from './base-header.vue';
-import Chart from './chart.vue';
 
-const modules = { ThemeToggleButton, BaseHeader, Chart };
+const modules = { ThemeToggleButton, BaseHeader };
 
 export const easyComponentsInstaller = {
   install(app) {
