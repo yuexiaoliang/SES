@@ -3,15 +3,16 @@ import { ref } from "vue";
 import { getStockDailyData } from "@/apis/stock";
 import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.vue";
 import { StockHistory } from "@/apis/typings";
+import { filterDataByPriceChgPctAndDateRange } from "@/utils/filter";
 
 const chartData = ref<StockHistory[]>([]);
 
 const load = async () => {
-  const { data } = await getStockDailyData("301231", {
-    start_date: "2008-01-01",
+  const { data } = await getStockDailyData("601390", {
+    start_date: "2022-01-01",
   });
 
-  chartData.value = data;
+  chartData.value = filterDataByPriceChgPctAndDateRange(data, 5, 3, true);
 };
 
 load();

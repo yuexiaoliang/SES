@@ -1,11 +1,7 @@
 import { StockHistory } from "@/apis/typings";
+import { EChartsOption, SeriesOption } from "echarts";
 
 export default (data: StockHistory[]) => {
-  const upColor = "#ec0000";
-  const upBorderColor = "#8A0000";
-  const downColor = "#00da3c";
-  const downBorderColor = "#008F28";
-
   // K 线数据
   const candlestickData = data.map((item: any) => {
     const { closing, opening, lowest, highest } = item;
@@ -17,26 +13,24 @@ export default (data: StockHistory[]) => {
   const items = [
     ["换手率", "turnover_rate", getMax(data, "turnover_rate")],
     ["跌涨幅", "price_chg_pct", getMax(data, "price_chg_pct")],
-    ["跌涨额", "price_chg_amt", getMax(data, "price_chg_amt")],
     ["振幅", "amplitude", getMax(data, "amplitude")],
-    ["成交量", "volume", getMax(data, "volume")],
-    ["成交额", "turnover", getMax(data, "turnover")],
   ];
 
   const source: any[] = [];
-  const dimensions = ["product"].concat(items.map((item) => item[0]));
 
   data.forEach((item) => {
     const { closing, opening, lowest, highest, date } = item;
-    const k = [date, opening, closing, lowest, highest];
-    const option: Record<string, any> = { closing, opening, lowest, highest };
+    const option: Record<string, any> = {
+      closing,
+      opening,
+      lowest,
+      highest,
+      raw: item,
+    };
 
-    items.forEach(([cnKey, key, maxVal], index) => {
-      if (index === 0) {
-        option[cnKey] = k;
-        return;
-      }
-      option[cnKey] = (item[key] / maxVal) * coefficient;
+    items.forEach(([cnKey, key, maxVal]) => {
+      // option[cnKey] = (item[key] / maxVal) * coefficient;
+      option[cnKey] = item[key];
     });
 
     source.push({
@@ -44,11 +38,69 @@ export default (data: StockHistory[]) => {
       ...option,
     });
   });
-  console.log({ dimensions, source });
+
+  const legend: EChartsOption["legend"] = {
+    data: items.map((item) => item[0]) as string[],
+  };
+  console.log({ source, legend });
+
+  const series: EChartsOption["series"] = [
+    {
+      name: "k线",
+      type: "candlestick",
+      yAxisIndex: 0,
+      encode: {
+        x: "product",
+        y: ["opening", "closing", "highest", "lowest"],
+        tooltip: ["opening", "closing", "highest", "lowest"],
+      },
+      itemStyle: {
+        color: "#ec0000",
+        color0: "#00da3c",
+        borderColor: "#8A0000",
+        borderColor0: "#008F28",
+      },
+      // markLine: {
+      //   symbol: ["none", "none"],
+      //   data: [
+      //     {
+      //       name: "min line on close",
+      //       type: "min",
+      //       valueDim: "closing",
+      //     },
+      //     {
+      //       name: "max line on close",
+      //       type: "max",
+      //       valueDim: "closing",
+      //     },
+      //   ],
+      // },
+    },
+    ...items.map((item) => {
+      const [name] = item;
+      return {
+        name: name,
+        type: "line",
+        yAxisIndex: 1,
+        encode: {
+          x: "product",
+          y: name,
+        },
+        showSymbol: true,
+        symbol(data) {
+          return data.raw?.label ? "circle" : "none";
+        },
+        symbolSize: 5,
+        lineStyle: {
+          width: 1,
+        },
+      } as SeriesOption;
+    }),
+  ];
 
   return {
     title: {
-      text: "上证指数",
+      text: data[0].name,
       left: 0,
     },
     tooltip: {
@@ -56,10 +108,23 @@ export default (data: StockHistory[]) => {
       axisPointer: {
         type: "cross",
       },
+      formatter: (params: any) => {
+        const { data } = params[0];
+        const { date, opening, closing, highest, lowest } = data.raw;
+        let result = `
+          ${date}<br/>
+          开 ${opening} 收 ${closing} 高 ${highest} 低 ${lowest}<br/>
+        `;
+
+        items.forEach(([cnKey, key]) => {
+          result += `${cnKey}：${data.raw[key]}<br/>`;
+        });
+
+        return result;
+      },
     },
-    legend: {},
+    legend,
     dataset: {
-      // dimensions,
       source,
     },
     grid: {
@@ -105,87 +170,8 @@ export default (data: StockHistory[]) => {
       },
     ],
 
-    series: [
-      {
-        type: "candlestick",
-        yAxisIndex: 0,
-        encode: {
-          x: "product",
-          y: ["opening", "closing", "highest", "lowest"],
-        },
-        itemStyle: {
-          color: upColor,
-          color0: downColor,
-          borderColor: upBorderColor,
-          borderColor0: downBorderColor,
-        },
-        markLine: {
-          symbol: ["none", "none"],
-          data: [
-            {
-              name: "min line on close",
-              type: "min",
-              valueDim: "closing",
-            },
-            {
-              name: "max line on close",
-              type: "max",
-              valueDim: "closing",
-            },
-          ],
-        },
-      },
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-      {
-        type: "line",
-        yAxisIndex: 1,
-        smooth: true,
-        lineStyle: {
-          opacity: 0.5,
-        },
-      },
-    ],
-  };
+    series,
+  } as EChartsOption;
 };
 
 function normalizeData(
