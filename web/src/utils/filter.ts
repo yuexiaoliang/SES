@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { StockHistory } from "@/apis/typings";
 
 export function filterDataByPriceChgPctAndDateRange(
@@ -51,6 +52,62 @@ export function filterDataByPriceChgPctAndDateRange(
       });
     }
   }
+
+  return filteredData;
+}
+
+export function filterDataByPriceChange(data, threshold, dateRange, label) {
+  const filteredData = [];
+  const filteredDataMap = {};
+
+  for (let i = 1; i < data.length; i++) {
+    const prevData = data[i - 1];
+    const currentData = data[i];
+
+    if (data[i].price_chg_pct > threshold) {
+      const labeledData = { ...currentData, label };
+      const labeledDataKey = `${labeledData.code}_${labeledData.date}`;
+
+      if (!filteredDataMap[labeledDataKey]) {
+        filteredData.push(labeledData);
+        filteredDataMap[labeledDataKey] = true;
+      }
+
+      for (let j = 1; j <= dateRange; j++) {
+        const prevIndex = i - j;
+        const nextIndex = i + j;
+
+        if (prevIndex >= 0) {
+          const prevRelatedData = data[prevIndex];
+          const prevRelatedDataKey = `${prevRelatedData.code}_${prevRelatedData.date}`;
+          if (!filteredDataMap[prevRelatedDataKey]) {
+            filteredData.push(prevRelatedData);
+            filteredDataMap[prevRelatedDataKey] = true;
+          }
+        }
+
+        if (nextIndex < data.length) {
+          const nextRelatedData = data[nextIndex];
+          const nextRelatedDataKey = `${nextRelatedData.code}_${nextRelatedData.date}`;
+          if (!filteredDataMap[nextRelatedDataKey]) {
+            filteredData.push(nextRelatedData);
+            filteredDataMap[nextRelatedDataKey] = true;
+          }
+        }
+      }
+    }
+  }
+
+  // Sort filteredData by date
+  filteredData.sort((a, b) => {
+    if (a.date < b.date) {
+      return -1;
+    } else if (a.date > b.date) {
+      return 1;
+    } else {
+      return 0;
+    }
+  });
 
   return filteredData;
 }

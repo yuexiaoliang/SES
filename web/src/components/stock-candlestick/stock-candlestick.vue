@@ -71,7 +71,7 @@ function dispose() {
 
 <style lang="scss" scoped>
 .chat {
-  width: 800px;
-  height: 300px;
+  width: 100vw;
+  height: 400px;
 }
 </style>
