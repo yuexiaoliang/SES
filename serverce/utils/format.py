@@ -1,5 +1,7 @@
 import datetime
+import math
 import time
+import pandas
 from typing import List
 
 
@@ -17,11 +19,11 @@ def format_timestamp(timestamp, format='%Y%m%d'):
 def clean_data(data: dict) -> dict:
     """ 清洗数据
 
-    1. 将值为"-"的字段设置为None
+    1. 将值为"-" 或者 "NaN" 的字段设置为None
     """
     cleaned_data = {}
     for k, v in data.items():
-        if v == "-":
+        if v == "-" or pandas.isna(v):
             cleaned_data[k] = None
         else:
             cleaned_data[k] = v

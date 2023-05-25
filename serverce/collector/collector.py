@@ -19,6 +19,8 @@ database = client[DatabaseNames.STOCK.value]
 timestamps_collection = database[DatabaseCollectionNames.TIMESTAMPS.value]
 stocks_collection = database[DatabaseCollectionNames.STOCKS.value]
 stocks_history_collection = database[DatabaseCollectionNames.STOCKS_HISTORY.value]
+report_dates_collection = database[DatabaseCollectionNames.REPORT_DATES.value]
+all_company_performance = database[DatabaseCollectionNames.ALL_COMPANY_PERFORMANCE.value]
 
 log_file = os.path.join(os.path.dirname(os.path.abspath(
     inspect.getfile(inspect.currentframe()))), 'logs/collector.log')
@@ -50,6 +52,79 @@ def get_collected_time(name):
         return format_timestamp(result['collected_timestamp'])
     except:
         return DEFAULT_START_COLLECT_TIME
+
+def collect_report_dates():
+    """ 采集 A 股所有报告期 """
+
+    # 采集的数据
+    report_dates_df = ef.stock.get_all_report_dates()
+
+    # 如果数据为空则跳过
+    if report_dates_df.empty:
+        logger.error("采集 A 股所有报告期数据为空，已跳过")
+        return
+
+    try:
+        # DataFrame 转换为字典
+        report_dates_data = report_dates_df.to_dict('records')
+
+        # 先清空数据库集合中的所有数据
+        report_dates_collection.drop()
+
+        # 把数据插入到数据库中
+        report_dates_collection.insert_many(clean_data_list(transform_data(report_dates_data)))
+
+        # 更新采集时间
+        update_collected_time(DatabaseCollectionNames.REPORT_DATES.value)
+
+        print('采集 A 股所有报告期完成！')
+    except pymongo.errors.BulkWriteError:
+        logger.error("采集 A 股所有报告期时出错，已跳过")
+
+    return report_dates_df['报告日期'].tolist()
+
+
+def collect_all_company_performance(report_dates=None):
+    """ 采集 A 股所有公司业绩 """
+
+    if report_dates is None:
+        # 采集 A 股所有报告期
+        report_dates = collect_report_dates()
+        print(report_dates)
+
+    all_company_performance.drop()
+
+    for report_date in report_dates:
+
+        # 采集的数据
+        all_company_performance_df = ef.stock.get_all_company_performance(report_date)
+
+        # 如果数据为空则跳过
+        if all_company_performance_df.empty:
+            logger.error(f"{report_date}: 采集 A 股所有公司业绩数据为空，已跳过")
+            return
+
+        try:
+            # DataFrame 转换为字典
+            all_company_performance_data = all_company_performance_df.to_dict('records')
+
+            # stock_code 等于 亚华电子 的数据
+            for d in all_company_performance_data:
+                d["报告日期"] = report_date
+                # del d["公告日期"]
+
+
+            # 把数据插入到数据库中
+            all_company_performance.insert_many(clean_data_list(transform_data(all_company_performance_data)))
+
+            # 更新采集时间
+            update_collected_time(DatabaseCollectionNames.ALL_COMPANY_PERFORMANCE.value)
+
+            print(f'{report_date}: 采集 A 股所有公司业绩完成！')
+        except pymongo.errors.BulkWriteError:
+            logger.error(f"{report_date}: 采集 A 股所有公司业绩时出错，已跳过")
+
+    print('采集 A 股所有公司业绩完成！')
 
 
 def collect_realtime_stocks():
