@@ -86,3 +86,15 @@ class StocksResponse(ResponseBaseModel):
         list: List[Stock]
 
     data: StocksInfo
+
+
+class ReportDate(BaseModel):
+    id: str = Field(..., title='唯一标识')
+    report_date: str = Field(..., title='财报日期')
+    quarterly_report_name: str = Field(..., title='财报名称')
+
+class ReportDatesResponse(ResponseBaseModel):
+    class config:
+        title = "股票财报日期"
+
+    data: List[ReportDate]

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 
-from models.stock import StockResponse, StocksResponse, StockHistoryResponse
+from models.stock import StockResponse, StocksResponse, StockHistoryResponse, ReportDatesResponse
 from utils.format import convert_list_objectid_to_str, convert_dict_objectid_to_str
 from utils.database import get_mongo_client
 from constants.enums import DatabaseCollectionNames, DatabaseNames
@@ -101,3 +101,24 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         "code": 0,
         "data": convert_list_objectid_to_str(result)
     }
+
+
+@router.get('report_dates', name='获取股票财报日期', response_model=ReportDatesResponse)
+def get_report_dates(client: MongoClient = Depends(get_mongo_client)):
+    ''' 获取股票财报日期
+
+    :return: 财报日期
+    '''
+
+    stock_report_dates = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.REPORT_DATES.value]
+
+    # 使用参数化查询，避免注入攻击
+    cursor = stock_report_dates.find()
+    result = list(cursor)
+
+    # 查询结果为空时，返回默认值
+    if not result:
+        return {"message": "未找到符合条件的数据", "code": 1, "data": None}
+
+    # 返回数据
+    return {"message": "获取成功", "code": 0, "data": convert_list_objectid_to_str(result)}
