@@ -1,3 +1,3 @@
-from .collector import start
+from .collector import all
 
-__all__ = ['start']
+__all__ = ['all']

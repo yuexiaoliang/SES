@@ -1,6 +1,3 @@
-
-# 股票代码,股票简称,公告日期,营业收入,营业收入同比增长,营业收入季度环比,净利润,净利润同比增长,净利润季度环比,每股收益,每股净资产,净资产收益率,销售毛利率,每股经营现金流量,报告日期,季报名称,股票代码,股票名称,市盈率(动),市净率,所处行业,总市值,流通市值,板块编号,ROE,净利率,净利润,毛利率,股票名称,股票代码,板块代码,板块名称,板块涨幅,股票代码,股票名称,上榜日期,解读,收盘价,涨跌幅,换手率,龙虎榜净买额,龙虎榜买入额,龙虎榜卖出额,龙虎榜成交额,市场总成交额,净买额占总成交比,成交额占总成交比,流通市值,上榜原因,股票名称,股票代码,昨收,时间,成交价,成交量,单数,股票名称,股票代码,日期,主力净流入,小单净流入,中单净流入,大单净流入,超大单净流入,主力净流入占比,小单流入净占比,中单流入净占比,大单流入净占比,超大单流入净占比,收盘价,涨跌幅,股票代码,股票名称,股东人数,股东人数增减,较上期变化百分比,股东户数统计截止日,户均持股市值,户均持股数量,总市值,总股本,公告日期,发行人全称,审核状态,注册地,证监会行业,保荐机构,会计师事务所,更新日期,受理日期,拟上市地点,股票代码,名称,涨跌幅,最新价,最高,最低,今开,涨跌额,换手率,量比,动态市盈率,成交量,成交额,昨日收盘,总市值,流通市值,市场类型,行情ID,指数代码,指数名称,股票代码,股票名称,股票权重,股票名称,股票代码,日期,开盘,收盘,最高,最低,成交量,成交额,振幅,涨跌幅,涨跌额,换手率,股票代码,股票名称,涨跌幅,最新价,最高,最低,今开,涨跌额,换手率,量比,动态市盈率,成交量,成交额,昨日收盘,总市值,流通市值,行情ID,市场类型,股票代码,时间,主力净流入,小单净流入,中单净流入,大单净流入,超大单净流入,股票代码,更新日期,股东代码,股东名称,持股数,持股比例,增减,变动率
-
 COLUMN_MAPPING = {
     "股票代码": "stock_code",
     "股票简称": "stock_name",
@@ -63,7 +60,6 @@ COLUMN_MAPPING = {
     "股东户数统计截止日": "shareholders_statistic_date",
     "户均持股市值": "average_shareholding_value_per_shareholder",
     "户均持股数量": "average_shareholding_number_per_shareholder",
-    "总市值": "total_market_value",
     "总股本": "total_share_capital",
     "发行人全称": "issuer_name",
     "审核状态": "audit_status",
@@ -81,7 +77,6 @@ COLUMN_MAPPING = {
     "涨跌额": "change_amount",
     "量比": "volume_ratio",
     "动态市盈率": "dynamic_pe_ratio",
-    "成交量": "transaction_volume",
     "成交额": "transaction_amount",
     "昨日收盘": "previous_closing_price",
     "行情ID": "quote_id",
@@ -90,17 +85,17 @@ COLUMN_MAPPING = {
     "股票权重": "stock_weight",
     "开盘": "opening_price",
     "收盘": "closing_price",
-    "成交量": "transaction_volume",
     "成交额": "transaction_amount",
     "振幅": "amplitude",
-    "涨跌额": "change_amount",
     "股东代码": "shareholder_code",
     "股东名称": "shareholder_name",
     "持股数": "shareholding_number",
     "持股比例": "shareholding_ratio",
     "增减": "change",
-    "变动率": "change_rate"
+    "变动率": "change_rate",
+    "市场类型": "market_type",
+    "更新时间": "update_time",
+    "最新交易日": "latest_trading_day"
 }
-
 
 DEFAULT_START_COLLECT_TIME = '20110101'

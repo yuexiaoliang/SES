@@ -27,5 +27,5 @@ def collect_stocks_history():
 
 @router.post("/all", name="采集沪深市场 A 股数据", response_model=NotDataResponse)
 def collect_all():
-    collector.collector.start()
+    collector.collector.all()
     return {"message": "采集成功", "code": 0, "data": None}
