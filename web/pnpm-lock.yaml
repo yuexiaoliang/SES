@@ -2,9 +2,11 @@ lockfileVersion: 5.4
 
 specifiers:
   '@element-plus/icons-vue': ^2.1.0
+  '@types/big.js': ^6.1.6
   '@vitejs/plugin-vue': ^4.1.0
   '@vueuse/core': ^10.1.0
   axios: ^1.4.0
+  big.js: ^6.2.1
   echarts: ^5.4.2
   element-plus: ^2.3.4
   lodash-es: ^4.17.21
@@ -21,6 +23,7 @@ dependencies:
   '@element-plus/icons-vue': 2.1.0_vue@3.2.47
   '@vueuse/core': 10.1.0_vue@3.2.47
   axios: 1.4.0
+  big.js: 6.2.1
   echarts: 5.4.2
   element-plus: 2.3.4_vue@3.2.47
   lodash-es: 4.17.21
@@ -30,6 +33,7 @@ dependencies:
   vue-router: 4.1.6_vue@3.2.47
 
 devDependencies:
+  '@types/big.js': 6.1.6
   '@vitejs/plugin-vue': 4.2.1_vite@4.3.3+vue@3.2.47
   sass: 1.62.1
   typescript: 5.0.4
@@ -286,6 +290,10 @@ packages:
     resolution: {integrity: sha512-Ccy0NlLkzr0Ex2FKvh2X+OyERHXJ88XJ1MXtsI9y9fGexlaXaVTPzBCRBwIxFkORuOb+uBqeu+RqnpgYTEZRUQ==}
     dev: false
 
+  /@types/big.js/6.1.6:
+    resolution: {integrity: sha512-0r9J+Zz9rYm2hOTwiMAVkm3XFQ4u5uTK37xrQMhc9bysn/sf/okzovWMYYIBMFTn/yrEZ11pusgLEaoarTlQbA==}
+    dev: true
+
   /@types/lodash-es/4.17.7:
     resolution: {integrity: sha512-z0ptr6UI10VlU6l5MYhGwS4mC8DZyYer2mCoyysZtSF7p26zOX8UpbrV0YpNYLGS8K4PUFIyEr62IMFFjveSiQ==}
     dependencies:
@@ -512,6 +520,10 @@ packages:
   /balanced-match/1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
+
+  /big.js/6.2.1:
+    resolution: {integrity: sha512-bCtHMwL9LeDIozFn+oNhhFoq+yQ3BNdnsLSASUxLciOb1vgvpHsIO1dsENiGMgbb4SkP5TrzWzRiLddn8ahVOQ==}
+    dev: false
 
   /binary-extensions/2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}

@@ -200,6 +200,8 @@ export interface StockHistory {
   turnover_rate: number;
 }
 
+export type StockHistoryWithAny = StockHistory & Record<string, any>;
+
 export interface GetStockByCodePathParams {
   code: string;
 }

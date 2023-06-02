@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { getStockDailyData } from "@/apis/stock";
 import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.vue";
+import PieChart from "@/components/pie-chart/pie-chart.vue";
+import { getStockDailyData } from "@/apis/stock";
 import { StockHistory } from "@/apis/typings";
-import { filterDataByPriceChgPctAndDateRange, filterDataByPriceChange } from "@/utils/filter";
+import { addMAToData, convertUPFields } from "@/utils/data-tools";
+import { generateMultipleArray } from "@/utils/common";
 
 const chartData = ref<StockHistory[]>([]);
 
 const load = async () => {
-  const { data } = await getStockDailyData("600288", {
-    start_date: "2020-01-01",
+  const { data } = await getStockDailyData("600362", {
+    start_date: "2011-01-01",
   });
 
-  const d = filterDataByPriceChange(data, 5, 3, true);
-  chartData.value = data
+  const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
+  chartData.value = d;
 };
 
 load();
@@ -22,6 +24,7 @@ load();
 <template>
   <div class="home-view">
     <StockCandlestick :data="chartData"></StockCandlestick>
+    <PieChart :data="chartData"></PieChart>
   </div>
 </template>
 
