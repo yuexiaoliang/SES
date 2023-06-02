@@ -21,27 +21,35 @@ export interface ResponseListData<List> {
  */
 export interface Stock {
   /**
+   * 涨跌额
+   */
+  change_amount?: number;
+  /**
+   * 涨跌幅
+   */
+  change_percent?: number;
+  /**
    * 流通市值
    */
-  circulating_cap?: number;
-  /**
-   * 股票代码
-   */
-  code: string;
+  circulating_market_value?: number;
   /**
    * 动态市盈率
    */
-  dynamic_pe?: number;
+  dynamic_pe_ratio?: number;
   /**
    * 毛利率
    */
-  gross_margin?: number;
+  gross_profit_margin?: number;
   /**
    * 最高
    */
-  highest?: number;
+  highest_price?: number;
   /**
-   * 所属行业
+   * 唯一标识
+   */
+  id: string;
+  /**
+   * 所处行业
    */
   industry?: string;
   /**
@@ -55,31 +63,23 @@ export interface Stock {
   /**
    * 最低
    */
-  lowest?: number;
-  /**
-   * 总市值
-   */
-  market_cap?: number;
+  lowest_price?: number;
   /**
    * 市场类型
    */
   market_type: string;
   /**
-   * 股票名称
-   */
-  name: string;
-  /**
-   * 净利率
-   */
-  net_margin?: number;
-  /**
    * 净利润
    */
   net_profit?: number;
   /**
+   * 净利率
+   */
+  net_profit_margin?: number;
+  /**
    * 今开
    */
-  open?: number;
+  opening_price?: number;
   /**
    * 市净率
    */
@@ -89,17 +89,13 @@ export interface Stock {
    */
   pe_ratio?: number;
   /**
+   * 板块编号
+   */
+  plate_code?: string;
+  /**
    * 昨日收盘
    */
-  prev_close?: number;
-  /**
-   * 涨跌额
-   */
-  price_chg_amt?: number;
-  /**
-   * 涨跌幅
-   */
-  price_chg_pct?: number;
+  previous_closing_price?: number;
   /**
    * 行情ID
    */
@@ -109,13 +105,25 @@ export interface Stock {
    */
   roe?: number;
   /**
-   * 板块编号
+   * 股票代码
    */
-  sector_id?: string;
+  stock_code: string;
+  /**
+   * 股票名称
+   */
+  stock_name: string;
+  /**
+   * 总市值
+   */
+  total_market_value?: number;
   /**
    * 成交额
    */
-  turnover?: number;
+  transaction_amount?: number;
+  /**
+   * 成交量
+   */
+  transaction_volume?: number;
   /**
    * 换手率
    */
@@ -127,11 +135,7 @@ export interface Stock {
   /**
    * 量比
    */
-  vol_ratio?: number;
-  /**
-   * 成交量
-   */
-  volume?: number;
+  volume_ratio?: number;
 }
 
 /**
@@ -143,13 +147,17 @@ export interface StockHistory {
    */
   amplitude: number;
   /**
+   * 涨跌额
+   */
+  change_amount: number;
+  /**
+   * 涨跌幅
+   */
+  change_percent: number;
+  /**
    * 收盘价
    */
-  closing: number;
-  /**
-   * 股票代码
-   */
-  code: string;
+  closing_price: number;
   /**
    * 日期
    */
@@ -157,7 +165,7 @@ export interface StockHistory {
   /**
    * 最高价
    */
-  highest: number;
+  highest_price: number;
   /**
    * 唯一标识
    */
@@ -165,35 +173,31 @@ export interface StockHistory {
   /**
    * 最低价
    */
-  lowest: number;
-  /**
-   * 股票名称
-   */
-  name: string;
+  lowest_price: number;
   /**
    * 开盘价
    */
-  opening: number;
+  opening_price: number;
   /**
-   * 涨跌额
+   * 股票代码
    */
-  price_chg_amt: number;
+  stock_code: string;
   /**
-   * 涨跌幅
+   * 股票名称
    */
-  price_chg_pct: number;
+  stock_name: string;
   /**
    * 成交额
    */
-  turnover: number;
+  transaction_amount: number;
+  /**
+   * 成交量
+   */
+  transaction_volume: number;
   /**
    * 换手率
    */
   turnover_rate: number;
-  /**
-   * 成交量
-   */
-  volume: number;
 }
 
 export interface GetStockByCodePathParams {

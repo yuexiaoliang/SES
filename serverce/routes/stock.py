@@ -50,7 +50,7 @@ def get_stock(code: str, client: MongoClient = Depends(get_mongo_client)):
         return {"message": "code 参数不能为空", "code": 1, "data": None}
 
     # 使用参数化查询，避免注入攻击
-    result = stocks.find_one({"code": {"$regex": code}})
+    result = stocks.find_one({"stock_code": {"$regex": code}})
 
     # 查询结果为空时，返回默认值
     if not result:
@@ -86,7 +86,7 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         # 计算10天前的日期
         start_date = (current_time - timedelta(days=30)).strftime('%Y-%m-%d')
 
-    query = {"code": {"$regex": code}, "date": {
+    query = {"stock_code": {"$regex": code}, "date": {
         "$gt": start_date, "$lte": end_date}}
     cursor = stock_history.find(query)
 

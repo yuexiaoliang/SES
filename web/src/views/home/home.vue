@@ -13,8 +13,7 @@ const load = async () => {
   });
 
   const d = filterDataByPriceChange(data, 5, 3, true);
-  console.log(`🚀 > file: home.vue:16 > load > d:`, d);
-  chartData.value = d
+  chartData.value = data
 };
 
 load();

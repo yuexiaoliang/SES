@@ -12,7 +12,7 @@ export function filterDataByPriceChgPctAndDateRange(
 
   for (let i = 0; i < data.length; i++) {
     const currentData = data[i];
-    const currentPriceChgPct = currentData.price_chg_pct;
+    const currentPriceChgPct = currentData.change_percent;
     const currentDate = new Date(currentData.date);
     const startDate = new Date(
       currentDate.getTime() - dateRange * 24 * 60 * 60 * 1000
@@ -29,7 +29,7 @@ export function filterDataByPriceChgPctAndDateRange(
       currentData.date <= endDateStr
     ) {
       const labeledData = { ...currentData, label };
-      const labeledDataKey = `${labeledData.code}_${labeledData.date}`;
+      const labeledDataKey = `${labeledData.stock_code}_${labeledData.date}`;
 
       if (!filteredDataMap[labeledDataKey]) {
         filteredData.push(labeledData);
@@ -38,13 +38,13 @@ export function filterDataByPriceChgPctAndDateRange(
 
       const relatedData = data.filter(
         (d) =>
-          d.code === currentData.code &&
+          d.stock_code === currentData.stock_code &&
           d.date >= startDateStr &&
           d.date <= endDateStr
       );
 
       relatedData.forEach((d) => {
-        const relatedDataKey = `${d.code}_${d.date}`;
+        const relatedDataKey = `${d.stock_code}_${d.date}`;
         if (!filteredDataMap[relatedDataKey]) {
           filteredData.push(d);
           filteredDataMap[relatedDataKey] = true;
@@ -64,9 +64,9 @@ export function filterDataByPriceChange(data, threshold, dateRange, label) {
     const prevData = data[i - 1];
     const currentData = data[i];
 
-    if (data[i].price_chg_pct > threshold) {
+    if (data[i].change_percent > threshold) {
       const labeledData = { ...currentData, label };
-      const labeledDataKey = `${labeledData.code}_${labeledData.date}`;
+      const labeledDataKey = `${labeledData.stock_code}_${labeledData.date}`;
 
       if (!filteredDataMap[labeledDataKey]) {
         filteredData.push(labeledData);
@@ -79,7 +79,7 @@ export function filterDataByPriceChange(data, threshold, dateRange, label) {
 
         if (prevIndex >= 0) {
           const prevRelatedData = data[prevIndex];
-          const prevRelatedDataKey = `${prevRelatedData.code}_${prevRelatedData.date}`;
+          const prevRelatedDataKey = `${prevRelatedData.stock_code}_${prevRelatedData.date}`;
           if (!filteredDataMap[prevRelatedDataKey]) {
             filteredData.push(prevRelatedData);
             filteredDataMap[prevRelatedDataKey] = true;
@@ -88,7 +88,7 @@ export function filterDataByPriceChange(data, threshold, dateRange, label) {
 
         if (nextIndex < data.length) {
           const nextRelatedData = data[nextIndex];
-          const nextRelatedDataKey = `${nextRelatedData.code}_${nextRelatedData.date}`;
+          const nextRelatedDataKey = `${nextRelatedData.stock_code}_${nextRelatedData.date}`;
           if (!filteredDataMap[nextRelatedDataKey]) {
             filteredData.push(nextRelatedData);
             filteredDataMap[nextRelatedDataKey] = true;

@@ -2,29 +2,30 @@ import { StockHistory } from "@/apis/typings";
 import { EChartsOption, SeriesOption } from "echarts";
 
 export default (data: StockHistory[]) => {
+  console.log(`🚀 > file: defineOption.ts:5 > data:`, data);
   // K 线数据
   const candlestickData = data.map((item: any) => {
-    const { closing, opening, lowest, highest } = item;
-    return [opening, closing, lowest, highest];
+    const { closing_price, opening_price, lowest_price, highest_price } = item;
+    return [opening_price, closing_price, lowest_price, highest_price];
   });
 
   const coefficient = Math.max(...candlestickData.map((item: any) => item[1]));
 
   const items = [
     ["换手率", "turnover_rate", getMax(data, "turnover_rate")],
-    ["跌涨幅", "price_chg_pct", getMax(data, "price_chg_pct")],
+    ["跌涨幅", "change_percent", getMax(data, "price_chg_pct")],
     ["振幅", "amplitude", getMax(data, "amplitude")],
   ];
 
   const source: any[] = [];
 
   data.forEach((item) => {
-    const { closing, opening, lowest, highest, date } = item;
+    const { closing_price, opening_price, lowest_price, highest_price, date } = item;
     const option: Record<string, any> = {
-      closing,
-      opening,
-      lowest,
-      highest,
+      closing_price,
+      opening_price,
+      lowest_price,
+      highest_price,
       raw: item,
     };
 
@@ -51,8 +52,8 @@ export default (data: StockHistory[]) => {
       yAxisIndex: 0,
       encode: {
         x: "product",
-        y: ["opening", "closing", "highest", "lowest"],
-        tooltip: ["opening", "closing", "highest", "lowest"],
+        y: ["opening_price", "closing_price", "highest_price", "lowest_price"],
+        tooltip: ["opening_price", "closing_price", "highest_price", "lowest_price"],
       },
       itemStyle: {
         color: "#ec0000",
@@ -66,25 +67,25 @@ export default (data: StockHistory[]) => {
       //     {
       //       name: "min line on close",
       //       type: "min",
-      //       valueDim: "closing",
+      //       valueDim: "closing_price",
       //     },
       //     {
       //       name: "max line on close",
       //       type: "max",
-      //       valueDim: "closing",
+      //       valueDim: "closing_price",
       //     },
       //   ],
       // },
     },
     ...items.map((item) => {
-      const [name] = item;
+      const [stock_name] = item;
       return {
-        name: name,
+        name: stock_name,
         type: "line",
         yAxisIndex: 1,
         encode: {
           x: "product",
-          y: name,
+          y: stock_name,
         },
         showSymbol: true,
         symbol(data) {
@@ -100,7 +101,7 @@ export default (data: StockHistory[]) => {
 
   return {
     title: {
-      text: data[0].name,
+      text: data[0].stock_name,
       left: 0,
     },
     tooltip: {
@@ -110,10 +111,10 @@ export default (data: StockHistory[]) => {
       },
       formatter: (params: any) => {
         const { data } = params[0];
-        const { date, opening, closing, highest, lowest } = data.raw;
+        const { date, opening_price, closing_price, highest_price, lowest_price } = data.raw;
         let result = `
           ${date}<br/>
-          开 ${opening} 收 ${closing} 高 ${highest} 低 ${lowest}<br/>
+          开 ${opening_price} 收 ${closing_price} 高 ${highest_price} 低 ${lowest_price}<br/>
         `;
 
         items.forEach(([cnKey, key]) => {
