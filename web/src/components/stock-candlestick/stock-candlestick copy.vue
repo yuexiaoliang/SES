@@ -6,8 +6,6 @@ import defineOption from "./defineOption";
 
 interface Props {
   data: StockHistory[];
-  width: string;
-  height: string;
 }
 
 const props = defineProps<Props>();
@@ -68,12 +66,12 @@ function dispose() {
 </script>
 
 <template>
-  <div class="chart" ref="chatRef">chat</div>
+  <div class="chat" ref="chatRef">chat</div>
 </template>
 
-<style lang="scss">
-.chart {
-  width: v-bind(width);
-  height: v-bind(height);
+<style lang="scss" scoped>
+.chat {
+  width: 100vw;
+  height: 400px;
 }
 </style>
