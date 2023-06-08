@@ -207,6 +207,8 @@ def collect_stocks_history(stock_codes=None):
 
     [collection, client] = create_client('STOCKS_HISTORY')
 
+    collection.drop()
+
     # 遍历采集到的数据
     for code, value in stock_history_dict.items():
         if value.empty:
@@ -217,7 +219,8 @@ def collect_stocks_history(stock_codes=None):
         try:
             # DataFrame 转换为字典
             data = value.to_dict("records")
-            data = clean_data_list(transform_data(data))
+
+            data = transform_data(data)
 
             df = pd.DataFrame(data)
 
@@ -238,6 +241,9 @@ def collect_stocks_history(stock_codes=None):
 
             # 将计算结果转换为字典列表
             data = df.to_dict(orient='records')
+
+            # 清洗数据
+            data = clean_data_list(data)
 
             collection.insert_many(data)
 
