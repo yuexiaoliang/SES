@@ -12,7 +12,7 @@ import data from "./mock";
 const chartData = ref<StockHistory[]>([]);
 
 const load = async () => {
-  const { data } = await getStockDailyData("600362", {
+  const { data } = await getStockDailyData("002103", {
     start_date: "2021-01-01",
   });
 
@@ -20,11 +20,15 @@ const load = async () => {
   chartData.value = d;
 };
 
-const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
+if (false) {
+  const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
 
-setTimeout(() => {
-  chartData.value = d;
-}, 100);
+  setTimeout(() => {
+    chartData.value = d;
+  }, 100);
+} else {
+  load();
+}
 </script>
 
 <template>

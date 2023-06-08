@@ -3,6 +3,8 @@ import inspect
 
 import pymongo
 import efinance as ef
+import pandas as pd
+import ta
 
 from constants.enums import DatabaseCollectionNames, DatabaseNames
 
@@ -188,6 +190,10 @@ def collect_stocks_history(stock_codes=None):
     # 采集开始时间
     start_time = get_collected_time(DatabaseCollectionNames.STOCKS_HISTORY.value)
 
+    # 测试用
+    # stock_codes = ['002103']
+    # start_time = '2023-01-01'
+
     print(f"采集 A 股日 K 开始时间 => {start_time}")
 
     # 采集的数据
@@ -211,8 +217,29 @@ def collect_stocks_history(stock_codes=None):
         try:
             # DataFrame 转换为字典
             data = value.to_dict("records")
+            data = clean_data_list(transform_data(data))
 
-            collection.insert_many(clean_data_list(transform_data(data)))
+            df = pd.DataFrame(data)
+
+            # 计算EMA、DIF、DEA、MACD
+            df['ema12'] = ta.trend.ema_indicator(df['closing_price'], window=12)
+            df['ema26'] = ta.trend.ema_indicator(df['closing_price'], window=26)
+            df['dif'] = df['ema12'] - df['ema26']
+            df['dea'] = ta.trend.ema_indicator(df['dif'], window=9)
+            df['macd'] = 2 * (df['dif'] - df['dea'])
+
+            # 计算MA5、MA10、MA20
+            df['ma5'] = ta.trend.sma_indicator(df['closing_price'], window=5)
+            df['ma10'] = ta.trend.sma_indicator(df['closing_price'], window=10)
+            df['ma20'] = ta.trend.sma_indicator(df['closing_price'], window=20)
+            df['ma30'] = ta.trend.sma_indicator(df['closing_price'], window=30)
+
+            df = df.round(2)
+
+            # 将计算结果转换为字典列表
+            data = df.to_dict(orient='records')
+
+            collection.insert_many(data)
 
             # for item in clean_data_list(transform_data(data)):
             #     date = item['date']

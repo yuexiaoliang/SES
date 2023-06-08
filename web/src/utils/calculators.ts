@@ -1,5 +1,66 @@
-import { StockHistory } from "@/apis/typings";
+// import { StockHistory } from "@/apis/typings";
 
+/**
+ * 股票历史信息
+ */
+interface StockHistory {
+  /**
+   * 振幅
+   */
+  amplitude: number;
+  /**
+   * 涨跌额
+   */
+  change_amount: number;
+  /**
+   * 涨跌幅
+   */
+  change_percent: number;
+  /**
+   * 收盘价
+   */
+  closing_price: number;
+  /**
+   * 日期
+   */
+  date: string;
+  /**
+   * 最高价
+   */
+  highest_price: number;
+  /**
+   * 唯一标识
+   */
+  id: string;
+  /**
+   * 最低价
+   */
+  lowest_price: number;
+  /**
+   * 开盘价
+   */
+  opening_price: number;
+  /**
+   * 股票代码
+   */
+  stock_code: string;
+  /**
+   * 股票名称
+   */
+  stock_name: string;
+  /**
+   * 成交额
+   */
+  transaction_amount: number;
+  /**
+   * 成交量
+   */
+  transaction_volume: number;
+  /**
+   * 换手率
+   */
+  turnover_rate: number;
+}
 type MACD = number[];
 type EMA = number[];
 type DIF = number[];
