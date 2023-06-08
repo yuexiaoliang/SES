@@ -16,15 +16,15 @@ const load = async () => {
     // start_date: "2021-01-01",
   });
 
-  const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
-  chartData.value = d;
+  // const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
+  chartData.value = data
 };
 
 if (true) {
-  const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
+  // const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
 
   setTimeout(() => {
-    chartData.value = d;
+    chartData.value = data
   }, 100);
 } else {
   load();

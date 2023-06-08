@@ -1,16 +1,9 @@
 import { StockHistory } from "@/apis/typings";
-import {
-  calculateEMA,
-  calculateDEA,
-  calculateDIFFromEMA,
-  calculateMA,
-  calculateMACD,
-} from "@/utils/calculators";
-import { EChartsOption } from "echarts";
+import { EChartsOption, EffectScatterSeriesOption } from "echarts";
 
 export default (data: StockHistory[]) => {
-  const dataZoomStart = 80;
-  const dataZoomEnd = 100;
+  const dataZoomStart = data.length - 120;
+  const dataZoomEnd = data.length;
 
   const left = 20;
   const right = 20;
@@ -20,37 +13,79 @@ export default (data: StockHistory[]) => {
   const backgroundColor = "#000";
   const color = "#4a657a";
 
-  // K 线数据
-  const candlestickData = data.map((item: any) => {
-    const { closing_price, opening_price, lowest_price, highest_price } = item;
-    return [opening_price, closing_price, lowest_price, highest_price];
-  });
-
-  // 成交量
-  const volumeData = data.map((item: any) => item.transaction_volume);
-
-  const ema12 = calculateEMA(data, 12);
-  const ema26 = calculateEMA(data, 26);
-  const dif = calculateDIFFromEMA(ema12, ema26);
-  const dea = calculateDEA(dif);
-  const macd = calculateMACD(dif, dea);
-
   // X 轴数据
   const xAxis = data.map((item: any) => item.date);
 
-  const ma5 = calculateMA(data, 5);
-  const ma10 = calculateMA(data, 10);
-  const ma20 = calculateMA(data, 20);
+  // K 线数据
+  const candlestickData = data.map((item) => [
+    item.opening_price,
+    item.closing_price,
+    item.lowest_price,
+    item.highest_price,
+  ]);
+
+  // 成交量
+  const volumeData = data.map((item) => item.transaction_volume);
+
+  const macd = data.map((item) => item.macd);
+  const dif = data.map((item) => item.dif);
+  const dea = data.map((item) => item.dea);
+
+  const ma5 = data.map((item) => item.ma5);
+  const ma10 = data.map((item) => item.ma10);
+  const ma20 = data.map((item) => item.ma20);
+
+  const buyPointData: EffectScatterSeriesOption["markPoint"][] = data
+    .filter((item, index) => {
+      const { dif, dea } = item;
+      if (!dif || !dea) return false;
+
+      const prevItem = data[index - 1];
+      const { dif: prevDif, dea: prevDea } = prevItem;
+
+      if (!prevDif || !prevDea) return false;
+
+      // MACD 黄金交叉
+      const isGoldenCross = dif > dea && prevDif < prevDea;
+
+      // MACD 零轴之上
+      const isAboveZeroAxis = dif > 0 && dea > 0;
+
+      return isGoldenCross && isAboveZeroAxis && item.macd && item.macd > 0;
+    })
+    .map((item) => ({
+      name: "标点",
+      value: item.lowest_price,
+      coord: [item.date, item.lowest_price],
+      symbol: "circle",
+      symbolSize: 0,
+      symbolOffset: [0, 15],
+      label: {
+        show: true,
+        formatter: "B",
+        color: "red",
+        fontSize: 14,
+        fontWeight: "bold",
+        textShadowColor: "red",
+        textShadowBlur: 5,
+      },
+    }));
+  console.log(`🚀 > file: defineOption.ts:73 > buyPointData:`, buyPointData);
 
   return {
     backgroundColor,
     title: {
       text: data[0].stock_name,
-      color: color,
+      color,
     },
 
     tooltip: {
-      show: false,
+      show: true,
+      trigger: "axis",
+      triggerOn: "mousemove|click",
+      axisPointer: {
+        type: "cross",
+      },
     },
 
     xAxis: [
@@ -112,16 +147,13 @@ export default (data: StockHistory[]) => {
         gridIndex: 0,
         axisLine: {
           lineStyle: {
-            color: color,
+            color,
           },
         },
         axisLabel: {
           inside: true,
           margin: 0,
           showMinLabel: true,
-          textStyle: {
-            color: "",
-          },
           fontWeight: "bold",
           padding: [0, 0, 3, 0],
           verticalAlign: "bottom",
@@ -179,23 +211,26 @@ export default (data: StockHistory[]) => {
       {
         show: false,
         type: "inside",
-        start: dataZoomStart,
-        end: dataZoomEnd,
+        startValue: dataZoomStart,
+        endValue: dataZoomEnd,
         xAxisIndex: [0, 0],
+        rangeMode: ["value", "value"],
       },
       {
         show: false,
         type: "inside",
-        start: dataZoomStart,
-        end: dataZoomEnd,
+        startValue: dataZoomStart,
+        endValue: dataZoomEnd,
         xAxisIndex: [0, 1],
+        rangeMode: ["value", "value"],
       },
       {
         show: false,
         type: "inside",
-        start: dataZoomStart,
-        end: dataZoomEnd,
+        startValue: dataZoomStart,
+        endValue: dataZoomEnd,
         xAxisIndex: [0, 2],
+        rangeMode: ["value", "value"],
       },
     ],
 
@@ -217,19 +252,12 @@ export default (data: StockHistory[]) => {
         yAxisIndex: 0,
         data: candlestickData,
         markPoint: {
-          symbol: "circle",
-          symbolSize: 0,
-
           label: {
             show: true,
             fontSize: 12,
             color: "#fff",
             formatter(param) {
               const { name, value } = param;
-
-              if (name === "标点") {
-                return value;
-              }
 
               if (name === "最低价") {
                 return value + " →";
@@ -238,6 +266,8 @@ export default (data: StockHistory[]) => {
               if (name === "最高价") {
                 return "← " + value;
               }
+
+              return value;
             },
           },
 
@@ -247,19 +277,17 @@ export default (data: StockHistory[]) => {
               type: "max",
               valueDim: "highest",
               symbolOffset: [40, 0],
-              itemStyle: {
-                color: red,
-              },
+              symbol: "circle",
+              symbolSize: 0,
             },
             {
               name: "最低价",
               type: "min",
               valueDim: "lowest",
               symbolOffset: [-40, 0],
-              itemStyle: {
-                color: "rgb(41,60,85)",
-              },
+              symbolSize: 0,
             },
+            ...buyPointData,
           ],
         },
         markLine: {
@@ -381,12 +409,12 @@ export default (data: StockHistory[]) => {
         show: true,
         textStyle: {
           color: "#fff",
-          lineHeight: 20
+          lineHeight: 20,
         },
         top: 10,
         itemWidth: 15,
         itemHeight: 10,
-        icon: 'roundRect'
+        icon: "roundRect",
       },
       {
         show: false,

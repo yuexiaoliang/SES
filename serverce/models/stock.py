@@ -62,6 +62,15 @@ class StockHistory(StockBaseModel):
     transaction_amount: float = Field(..., title='成交额')
     turnover_rate: float = Field(..., title='换手率')
     transaction_volume: int = Field(..., title='成交量')
+    ema12: float = Field(None, title='EMA12')
+    ema26: float = Field(None, title='EMA26')
+    dif: float = Field(None, title='DIF')
+    dea: float = Field(None, title='DEA')
+    macd: float = Field(None, title='MACD')
+    ma5: float = Field(None, title='MA5')
+    ma10: float = Field(None, title='MA10')
+    ma20: float = Field(None, title='MA20')
+    ma30: float = Field(None, title='MA30')
 
 
 class StockHistoryResponse(ResponseBaseModel):

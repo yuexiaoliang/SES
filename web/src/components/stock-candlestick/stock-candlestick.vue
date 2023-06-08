@@ -28,7 +28,6 @@ onMounted(() => {
 watch(
   () => props.data,
   () => {
-    console.log(option.value);
     setOption();
   },
   {

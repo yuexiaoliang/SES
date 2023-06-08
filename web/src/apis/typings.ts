@@ -163,6 +163,22 @@ export interface StockHistory {
    */
   date: string;
   /**
+   * DEA
+   */
+  dea?: number;
+  /**
+   * DIF
+   */
+  dif?: number;
+  /**
+   * EMA12
+   */
+  ema12?: number;
+  /**
+   * EMA26
+   */
+  ema26?: number;
+  /**
    * 最高价
    */
   highest_price: number;
@@ -174,6 +190,26 @@ export interface StockHistory {
    * 最低价
    */
   lowest_price: number;
+  /**
+   * MA10
+   */
+  ma10?: number;
+  /**
+   * MA20
+   */
+  ma20?: number;
+  /**
+   * MA30
+   */
+  ma30?: number;
+  /**
+   * MA5
+   */
+  ma5?: number;
+  /**
+   * MACD
+   */
+  macd?: number;
   /**
    * 开盘价
    */
