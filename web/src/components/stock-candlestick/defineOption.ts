@@ -12,11 +12,13 @@ export default (data: StockHistory[]) => {
   const dataZoomStart = 80;
   const dataZoomEnd = 100;
 
-  const left = 20
-  const right = 20
+  const left = 20;
+  const right = 20;
 
   const red = "#FD1050";
   const green = "#0CF49B";
+  const backgroundColor = "#000";
+  const color = "#4a657a";
 
   // K 线数据
   const candlestickData = data.map((item: any) => {
@@ -36,11 +38,15 @@ export default (data: StockHistory[]) => {
   // X 轴数据
   const xAxis = data.map((item: any) => item.date);
 
+  const ma5 = calculateMA(data, 5);
+  const ma10 = calculateMA(data, 10);
+  const ma20 = calculateMA(data, 20);
+
   return {
-    backgroundColor: "#19232d",
+    backgroundColor,
     title: {
       text: data[0].stock_name,
-      color: "#4a657a",
+      color: color,
     },
 
     tooltip: {
@@ -51,59 +57,48 @@ export default (data: StockHistory[]) => {
       {
         show: true,
         scale: true,
-        nameGap: 15,
         gridIndex: 0,
-        splitNumber: 5,
-        axisLine: {
-          lineStyle: {
-            color: "#4a657a",
-          },
-        },
-        axisLabel: {
-          show: false,
-        },
         axisTick: {
           show: false,
         },
+        axisLabel: {
+          margin: 15,
+        },
         data: xAxis,
-        axisPointer: {
-          label: {
-            show: false,
-          },
-        }, //主图禁用下标显示
       },
       {
         show: true,
         scale: true,
-        nameGap: 15,
         gridIndex: 1,
-        splitNumber: 5,
         axisLabel: {
           show: false,
         },
         axisTick: {
           show: false,
         },
-        data: xAxis,
         axisPointer: {
           label: {
             show: false,
           },
-        }, //附图1禁用下标显示
+        },
+        data: xAxis,
       },
       {
         show: true,
         scale: true,
         gridIndex: 2,
-        splitNumber: 5,
         axisLine: {
-          lineStyle: {
-            color: "#4a657a",
-          },
+          show: false,
         },
         axisLabel: {
-          textStyle: {
-            color: "#4a657a",
+          show: false,
+        },
+        axisTick: {
+          show: false,
+        },
+        axisPointer: {
+          label: {
+            show: false,
           },
         },
         data: xAxis,
@@ -117,19 +112,24 @@ export default (data: StockHistory[]) => {
         gridIndex: 0,
         axisLine: {
           lineStyle: {
-            color: "#4a657a",
+            color: color,
           },
         },
         axisLabel: {
-          width: 180,
+          inside: true,
+          margin: 0,
+          showMinLabel: true,
           textStyle: {
-            color: "#4a657a",
+            color: "",
           },
+          fontWeight: "bold",
+          padding: [0, 0, 3, 0],
+          verticalAlign: "bottom",
         },
         splitLine: {
-          show: true,
           lineStyle: {
-            color: "4a657a",
+            dashOffset: 0,
+            color: color,
             type: "dashed",
           },
         },
@@ -137,37 +137,32 @@ export default (data: StockHistory[]) => {
       {
         position: "right",
         gridIndex: 1,
-        splitNumber: 2,
         minInterval: 0,
         axisLine: {
-          lineStyle: {
-            color: "#4a657a",
-          },
+          show: false,
         },
+
+        axisTick: {
+          show: false,
+        },
+
         axisLabel: {
-          textStyle: {
-            color: "#4a657a",
-          },
+          show: false,
         },
+
         splitLine: {
-          show: true,
-          lineStyle: {
-            color: "4a657a",
-            type: "dashed",
-          },
+          show: false,
         },
       },
       {
         position: "right",
         gridIndex: 2,
         axisLine: {
-          lineStyle: {
-            color: "#fff",
-          },
+          show: false,
         },
 
         axisTick: {
-          show: false
+          show: false,
         },
 
         axisLabel: {
@@ -202,9 +197,6 @@ export default (data: StockHistory[]) => {
         end: dataZoomEnd,
         xAxisIndex: [0, 2],
       },
-      {
-        show: false,
-      },
     ],
 
     axisPointer: {
@@ -219,19 +211,14 @@ export default (data: StockHistory[]) => {
 
     series: [
       {
+        name: "K线图",
         type: "candlestick",
         xAxisIndex: 0,
         yAxisIndex: 0,
         data: candlestickData,
         markPoint: {
           symbol: "circle",
-          symbolSize: function (_value, param) {
-            let size = 15;
-            if (param.name === "最高价" || param.name === "最底价") {
-              size = 0.1;
-            }
-            return size;
-          },
+          symbolSize: 0,
 
           label: {
             show: true,
@@ -276,18 +263,16 @@ export default (data: StockHistory[]) => {
           ],
         },
         markLine: {
-          symbol: "",
+          symbol: ["none", "none"],
+          label: {
+            show: false,
+          },
+          lineStyle: {
+            type: "dotted",
+          },
           data: [
             {
               yAxis: data[data.length - 1].opening_price,
-              label: {
-                position: "end",
-                padding: 0,
-              },
-              lineStyle: {
-                type: "dotted",
-                color: "#ccc",
-              },
             },
           ],
         },
@@ -330,11 +315,47 @@ export default (data: StockHistory[]) => {
 
       {
         type: "line",
+        name: "MA5",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: ma5,
+        symbol: "none",
+        lineStyle: {
+          width: 1,
+        },
+      },
+
+      {
+        type: "line",
+        name: "MA10",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: ma10,
+        symbol: "none",
+        lineStyle: {
+          width: 1,
+        },
+      },
+
+      {
+        type: "line",
+        name: "MA20",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: ma20,
+        symbol: "none",
+        lineStyle: {
+          width: 1,
+        },
+      },
+
+      {
+        type: "line",
         name: "DIF",
         xAxisIndex: 2,
         yAxisIndex: 2,
         data: dif,
-        showSymbol: false,
+        symbol: "none",
         lineStyle: {
           color: "white",
           width: 1,
@@ -346,7 +367,7 @@ export default (data: StockHistory[]) => {
         name: "DEA",
         xAxisIndex: 2,
         yAxisIndex: 2,
-        showSymbol: false,
+        symbol: "none",
         data: dea,
         lineStyle: {
           color: "yellow",
@@ -356,37 +377,37 @@ export default (data: StockHistory[]) => {
     ],
     legend: [
       {
-        data: [],
+        data: ["MA5", "MA10", "MA20"],
         show: true,
-        padding: 5,
-        itemGap: 10,
-        itemWidth: 25,
-        itemHeight: 14,
+        textStyle: {
+          color: "#fff",
+          lineHeight: 20
+        },
+        top: 10,
+        itemWidth: 15,
+        itemHeight: 10,
+        icon: 'roundRect'
       },
       {
         show: false,
-        padding: 5,
-        itemGap: 10,
-        itemWidth: 25,
-        itemHeight: 14,
       },
     ],
 
     grid: [
       {
         show: false,
-        top: "60px",
+        top: 0,
         left,
         right,
-        bottom: "35%",
+        bottom: "40%",
         containLabel: true,
       },
       {
         show: false,
         left,
         right,
-        top: "67%",
-        bottom: "20%",
+        top: "60.5%",
+        bottom: "18.5%",
         containLabel: true,
       },
       {
@@ -394,7 +415,7 @@ export default (data: StockHistory[]) => {
         left,
         top: "82%",
         right,
-        bottom: "30px",
+        bottom: 0,
         containLabel: true,
       },
     ],
