@@ -13,14 +13,14 @@ const chartData = ref<StockHistory[]>([]);
 
 const load = async () => {
   const { data } = await getStockDailyData("002103", {
-    start_date: "2021-01-01",
+    // start_date: "2021-01-01",
   });
 
   const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
   chartData.value = d;
 };
 
-if (false) {
+if (true) {
   const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
 
   setTimeout(() => {

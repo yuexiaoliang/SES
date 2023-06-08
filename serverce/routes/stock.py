@@ -74,20 +74,20 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
     if not code:
         return {"message": "code 参数不能为空", "code": 1, "data": None}
 
-    current_time = datetime.now().date()
-
     stock_history = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 
-    if not end_date:
-        # 获取当前日期
-        end_date = current_time.strftime('%Y-%m-%d')
+    query = {"stock_code": code }
 
-    if not start_date:
-        # 计算10天前的日期
-        start_date = (current_time - timedelta(days=30)).strftime('%Y-%m-%d')
+    if (start_date or end_date):
+        query['date'] = {}
 
-    query = {"stock_code": {"$regex": code}, "date": {
-        "$gt": start_date, "$lte": end_date}}
+    if (start_date):
+        query['date']['$gt'] = start_date
+
+    if (end_date):
+        query['date']['$lte'] = end_date
+
+
     cursor = stock_history.find(query)
 
     # 查询结果为空时，返回默认值
