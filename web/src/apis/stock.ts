@@ -5,11 +5,12 @@ import {
   GetStockDailyDataParams,
   Stock,
   StockHistory,
+  ResponseListData,
 } from "./typings";
 
 // 获取股票列表
 export const getStockList = (params: RequestListCommonParams) => {
-  return http.get<Stock[]>("/stock/list", { params });
+  return http.get<ResponseListData<Stock[]>>("/stock/list", { params });
 };
 
 // 根据股票 Code 获取股票信息

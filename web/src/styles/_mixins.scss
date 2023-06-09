@@ -1,4 +1,3 @@
-
 @mixin flex-center($axis: null, $direction: row, $inlineFlex: false) {
   @if $inlineFlex {
     display: inline-flex;
@@ -8,10 +7,10 @@
 
   flex-direction: $direction;
 
-  @if $direction == 'row' or $direction == 'row-reverse' {
-    @if $axis == 'x' {
+  @if $direction == "row" or $direction == "row-reverse" {
+    @if $axis == "x" {
       justify-content: center;
-    } @else if $axis == 'y' {
+    } @else if $axis == "y" {
       align-items: center;
     } @else {
       align-items: center;
@@ -19,10 +18,10 @@
     }
   }
 
-  @if $direction == 'column' or $direction == 'column-reverse' {
-    @if $axis == 'x' {
+  @if $direction == "column" or $direction == "column-reverse" {
+    @if $axis == "x" {
       align-items: center;
-    } @else if $axis == 'y' {
+    } @else if $axis == "y" {
       justify-content: center;
     } @else {
       align-items: center;
@@ -43,3 +42,4 @@
     overflow: hidden;
   }
 }
+

@@ -70,7 +70,6 @@ export default (data: StockHistory[]) => {
         textShadowBlur: 5,
       },
     }));
-  console.log(`🚀 > file: defineOption.ts:73 > buyPointData:`, buyPointData);
 
   return {
     backgroundColor,

@@ -1,4 +1,20 @@
 :root {
+}
+
+:root.dark {
   --header-height: 60px;
   --base-font-size: 14px;
+
+  --color-black: #000;
+  --color-white: #fff;
+  --color-gray: #b2b2b2;
+  --main-bg: var(--color-black);
+  --main-color: var(--color-gray);
+
+  --primary-color: #ccc;
+  --border-color: #333;
+
+  --el-color-white: var(--main-color);
+  --el-text-color-regular: var(--main-color);
+  --el-bg-color: var(--main-bg);
 }
