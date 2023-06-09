@@ -1,7 +1,7 @@
-import { StockHistory } from "@/apis/typings";
+import { StockHistory, StockHistoryWithAny } from "@/apis/typings";
 import { EChartsOption, EffectScatterSeriesOption } from "echarts";
 
-export default (data: StockHistory[]) => {
+export default (data: StockHistoryWithAny[]) => {
   const dataZoomStart = data.length - 120;
   const dataZoomEnd = data.length;
 
@@ -35,41 +35,36 @@ export default (data: StockHistory[]) => {
   const ma10 = data.map((item) => item.ma10);
   const ma20 = data.map((item) => item.ma20);
 
-  const buyPointData: EffectScatterSeriesOption["markPoint"][] = data
-    .filter((item, index) => {
-      const { dif, dea } = item;
-      if (!dif || !dea) return false;
+  const buyPointData = data
+    .filter((item) => item.buyRecord || item.sellRecord)
+    .map((item) => {
+      const { buyRecord, sellRecord } = item;
 
-      const prevItem = data[index - 1];
-      const { dif: prevDif, dea: prevDea } = prevItem;
-
-      if (!prevDif || !prevDea) return false;
-
-      // MACD 黄金交叉
-      const isGoldenCross = dif > dea && prevDif < prevDea;
-
-      // MACD 零轴之上
-      const isAboveZeroAxis = dif > 0 && dea > 0;
-
-      return isGoldenCross && isAboveZeroAxis && item.macd && item.macd > 0;
-    })
-    .map((item) => ({
-      name: "标点",
-      value: item.lowest_price,
-      coord: [item.date, item.lowest_price],
-      symbol: "circle",
-      symbolSize: 0,
-      symbolOffset: [0, 15],
-      label: {
+      const label = {
         show: true,
-        formatter: "B",
-        color: "red",
+        formatter: buyRecord ? "B" : "S",
+        color: buyRecord ? red : green,
         fontSize: 14,
         fontWeight: "bold",
-        textShadowColor: "red",
+        textShadowColor: buyRecord ? red : green,
         textShadowBlur: 5,
-      },
-    }));
+      };
+
+      const result = {
+        name: "标点",
+        value: buyRecord ? buyRecord.price : sellRecord.price,
+        coord: [item.date, item.lowest_price],
+        symbol: "circle",
+        symbolSize: 0,
+        symbolOffset: [0, 15],
+        label,
+        emphasis: {
+          disabled: true,
+        },
+      };
+
+      return result;
+    });
 
   return {
     backgroundColor,

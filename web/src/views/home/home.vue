@@ -25,13 +25,9 @@ if (true) {
   // const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
 
   setTimeout(() => {
-    chartData.value = data;
-
-    record.value = tradingTest(stock, data);
-    console.log(
-      `🚀 > file: home.vue:30 > setTimeout > record.value:`,
-      record.value
-    );
+    const [_record, _data] = tradingTest(stock, data);
+    chartData.value = _data;
+    record.value = _record;
   }, 100);
 } else {
   load();
@@ -58,20 +54,23 @@ const onStockClick = (stock: Stock) => {
 
     <aside class="home__side home__side--right">
       <ul>
-        <li v-for="item in record" :key="item.date">
+        <li v-for="{ buy, sell } in record">
           <br />
-          <p>类型：{{ item.type }}</p>
-          <p>时间：{{ item.date }}</p>
-          <p>单价：{{ item.price }}</p>
-          <p>数量：{{ item.holdings }} 股</p>
-          <p>总金额：{{ item.total }}</p>
-          <p>剩余可用资金：{{ item.availableFunds }}</p>
+          <p>买入时间：{{ buy.date }}</p>
+          <p>买入单价：{{ buy.price }}</p>
+          <p>买入数量：{{ buy.holdings }} 股</p>
+          <p>买入总金额：{{ buy.total }}</p>
+          <p>买入后剩余资金：{{ buy.availableFunds }}</p>
 
-          <template v-if="item.type === '卖出'">
-            <p>持仓天数：{{ item.holdingTime }} 天</p>
-            <p>收益率：{{ item.gainRatio }} %</p>
-            <p>利润：{{ item.profit }}</p>
-            <hr />
+          <template v-if="sell">
+            <p>卖出时间：{{ sell.date }}</p>
+            <p>卖出单价：{{ sell.price }}</p>
+            <p>卖出数量：{{ sell.holdings }} 股</p>
+            <p>卖出总金额：{{ sell.total }}</p>
+            <p>卖出后剩余资金：{{ sell.availableFunds }}</p>
+            <p>持仓天数：{{ sell.holdingTime }} 天</p>
+            <p>收益率：{{ sell.gainRatio }} %</p>
+            <p>利润：{{ sell.profit }}</p>
           </template>
         </li>
       </ul>

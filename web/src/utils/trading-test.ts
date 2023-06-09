@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { formatNumber } from "@/utils/formatter";
-import { Stock, StockHistory } from "@/apis/typings";
+import { Stock, StockHistory, StockHistoryWithAny } from "@/apis/typings";
 
 interface BuyRecord {
   history: StockHistory;
@@ -64,61 +64,12 @@ interface SellRecord {
   holdingTime: number;
 }
 
-export type TradingRecord = BuyRecord | SellRecord;
+export interface TradingRecord {
+  buy: BuyRecord;
+  sell?: SellRecord;
+}
 
-// 计算过户费
-export const calculateTransferFee = (total: number, stock: Stock) => {
-  return stock.market_type === "沪A" ? formatNumber(total * 0.00002) : 0;
-};
-
-// 计算佣金
-export const calculateCommission = (total: number) => {
-  const commission = formatNumber(total * 0.0003)
-  return commission > 5 ? commission : 5;
-};
-
-/**
- * 计算每股股票买入成本
- * @param total 单价
- * @param count 数量
- * @param stock 股票信息
- */
-export const calculateBuyCost = (total: number, stock: Stock) => {
-  // 过户费
-  const transferFee = calculateTransferFee(total, stock);
-
-  // 佣金
-  const commission = calculateCommission(total);
-
-  return formatNumber(transferFee + commission + total)
-};
-
-/**
- * 计算卖出价格
- * @param price 单价
- * @param count 数量
- * @param stock 股票信息
- */
-export const calculateSellCost = (
-  price: number,
-  count: number,
-  stock: Stock
-) => {
-  const total = price * count;
-
-  // 计算印花税
-  const stampDuty = total * 0.001;
-
-  // 过户费
-  const transferFee = calculateTransferFee(total, stock);
-
-  // 佣金
-  const commission = calculateCommission(total);
-
-  return formatNumber(total - stampDuty - transferFee - commission)
-};
-
-export const tradingTest = (stock: Stock, data: StockHistory[]) => {
+export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   // 本金
   let principal = 7000;
 
@@ -138,21 +89,23 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
     if (status === 0) {
       const record = buy(item, index);
       if (record) {
-        records.push(record);
+        records.push({ buy: record });
+        item.buyRecord = record;
         return;
       }
     }
 
     if (status === 1) {
-      const record = sell(item);
-      if (record) {
-        records.push(record);
-        return;
-      }
+      const sellRecord = sell(item);
+      if (!sellRecord) return;
+      const record = records[records.length - 1];
+      record.sell = sellRecord;
+      item.sellRecord = record;
+      return;
     }
   });
 
-  return records;
+  return [records, data] as [TradingRecord[], StockHistory[]];
 
   // 买入
   function buy(item: StockHistory, index: number): BuyRecord | undefined {
@@ -192,10 +145,10 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
     holdings = _count * 100;
 
     // 买入成本（每股）
-    const _cost = formatNumber(total / holdings)
+    const _cost = formatNumber(total / holdings);
 
     // 可用资金
-    availableFunds = formatNumber(availableFunds - holdings * _cost)
+    availableFunds = formatNumber(availableFunds - holdings * _cost);
 
     // 状态变更为持仓中
     status = 1;
@@ -231,7 +184,7 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
 
   // 卖出
   function sell(item: StockHistory): SellRecord | undefined {
-    const buyData = records[records.length - 1] as BuyRecord;
+    const buyData = records[records.length - 1].buy as BuyRecord;
 
     const buyPrice = buyData.price;
 
@@ -239,7 +192,7 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
     const price = item.closing_price;
 
     // 收益率
-    const gainRatio = formatNumber(((price - buyPrice) / buyPrice) * 100)
+    const gainRatio = formatNumber(((price - buyPrice) / buyPrice) * 100);
 
     // 如果收益率低于 5% 并且 高于 -2% 则继续持有
     if (gainRatio < 5 && gainRatio > -2) return;
@@ -251,10 +204,10 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
     const total = calculateSellCost(price, holdings, stock);
 
     // 可用资金
-    availableFunds = formatNumber(availableFunds + total)
+    availableFunds = formatNumber(availableFunds + total);
 
     // 利润
-    const profit = formatNumber(availableFunds - principal)
+    const profit = formatNumber(availableFunds - principal);
 
     // 本金
     principal = availableFunds;
@@ -298,6 +251,55 @@ export const tradingTest = (stock: Stock, data: StockHistory[]) => {
   }
 };
 
+// 计算过户费
+export function calculateTransferFee(total: number, stock: Stock) {
+  return stock.market_type === "沪A" ? formatNumber(total * 0.00002) : 0;
+}
+
+// 计算佣金
+export function calculateCommission(total: number) {
+  const commission = formatNumber(total * 0.0003);
+  return commission > 5 ? commission : 5;
+}
+
+/**
+ * 计算每股股票买入成本
+ * @param total 单价
+ * @param count 数量
+ * @param stock 股票信息
+ */
+export function calculateBuyCost(total: number, stock: Stock) {
+  // 过户费
+  const transferFee = calculateTransferFee(total, stock);
+
+  // 佣金
+  const commission = calculateCommission(total);
+
+  return formatNumber(transferFee + commission + total);
+}
+
+/**
+ * 计算卖出价格
+ * @param price 单价
+ * @param count 数量
+ * @param stock 股票信息
+ */
+export function calculateSellCost(price: number, count: number, stock: Stock) {
+  const total = price * count;
+
+  // 计算印花税
+  const stampDuty = total * 0.001;
+
+  // 过户费
+  const transferFee = calculateTransferFee(total, stock);
+
+  // 佣金
+  const commission = calculateCommission(total);
+
+  return formatNumber(total - stampDuty - transferFee - commission);
+}
+
+// 计算持仓时间
 export function calculateDays(start: string, end: string): number {
   const startDate = dayjs(start);
   const endDate = dayjs(end);
