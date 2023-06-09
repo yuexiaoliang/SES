@@ -11,18 +11,22 @@ import data, { stock } from "./mock";
 
 const chartData = ref<StockHistory[]>([]);
 
+const code = ref("002103");
+
 const load = async () => {
-  const { data } = await getStockDailyData("002103", {
+  const { data } = await getStockDailyData(code.value, {
     // start_date: "2021-01-01",
   });
 
   // const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
-  chartData.value = data;
+  const [_record, _data] = tradingTest(stock, data);
+  chartData.value = _data;
+  record.value = _record;
 };
 
 const record = ref<TradingRecord[]>([]);
 
-if (true) {
+if (false) {
   // const d = convertUPFields(addMAToData(data, [5, 10, 20, 50, 100, 200]), 5);
 
   setTimeout(() => {
@@ -35,7 +39,8 @@ if (true) {
 }
 
 const onStockClick = (stock: Stock) => {
-  console.log(stock);
+  code.value = stock.stock_code;
+  load();
 };
 </script>
 
