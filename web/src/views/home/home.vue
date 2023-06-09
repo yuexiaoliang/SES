@@ -3,8 +3,9 @@ import { ref } from "vue";
 import { getStockDailyData } from "@/apis/stock";
 import { Stock, StockHistory } from "@/apis/typings";
 import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.vue";
-import HomeList from "./home-list.vue";
 import { tradingTest, TradingRecord } from "@/utils/trading-test";
+import HomeList from "./home-list.vue";
+import HomeRecord from "./home-record.vue";
 
 import data, { stock } from "./mock";
 
@@ -53,27 +54,7 @@ const onStockClick = (stock: Stock) => {
     </section>
 
     <aside class="home__side home__side--right">
-      <ul>
-        <li v-for="{ buy, sell } in record">
-          <br />
-          <p>买入时间：{{ buy.date }}</p>
-          <p>买入单价：{{ buy.price }}</p>
-          <p>买入数量：{{ buy.holdings }} 股</p>
-          <p>买入总金额：{{ buy.total }}</p>
-          <p>买入后剩余资金：{{ buy.availableFunds }}</p>
-
-          <template v-if="sell">
-            <p>卖出时间：{{ sell.date }}</p>
-            <p>卖出单价：{{ sell.price }}</p>
-            <p>卖出数量：{{ sell.holdings }} 股</p>
-            <p>卖出总金额：{{ sell.total }}</p>
-            <p>卖出后剩余资金：{{ sell.availableFunds }}</p>
-            <p>持仓天数：{{ sell.holdingTime }} 天</p>
-            <p>收益率：{{ sell.gainRatio }} %</p>
-            <p>利润：{{ sell.profit }}</p>
-          </template>
-        </li>
-      </ul>
+      <HomeRecord :record="record"></HomeRecord>
     </aside>
   </div>
 </template>
