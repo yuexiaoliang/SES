@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { TradingRecord } from "@/utils/trading-test";
 import { formatNumber } from "@/utils/formatter";
 
@@ -42,6 +42,13 @@ const overview = computed(() => {
     totalProfit,
   };
 });
+
+const currentIndex = ref<number | null>(null);
+
+const onItemClick = (item: TradingRecord, index: number) => {
+  currentIndex.value = index;
+  emit("onRecordAnchorClick", item);
+};
 </script>
 
 <template>
@@ -57,15 +64,14 @@ const overview = computed(() => {
 
     <ul class="record">
       <li
-        v-for="item in record"
+        v-for="(item, index) in record"
         class="record__item"
         :class="{
+          'record__item--active': currentIndex === index,
           'record__item--is-loss': item.sell?.profit && item.sell.profit < 0,
         }"
       >
-        <el-icon
-          class="anchor el-icon-view"
-          @click="emit('onRecordAnchorClick', item)"
+        <el-icon class="anchor el-icon-view" @click="onItemClick(item, index)"
           ><View
         /></el-icon>
         <p>买入时间：{{ item.buy.date }}</p>
@@ -140,9 +146,14 @@ const overview = computed(() => {
         top: 2px;
         right: 3px;
         line-height: 1;
-        color: yellow;
+        color: #fff;
         font-size: 18px;
         cursor: pointer;
+      }
+      &--active {
+        .anchor {
+          color: yellow;
+        }
       }
     }
   }

@@ -195,7 +195,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     const gainRatio = formatNumber(((price - buyPrice) / buyPrice) * 100);
 
     // 如果收益率低于 5% 并且 高于 -2% 则继续持有
-    if (gainRatio < 5 && gainRatio > -2) return;
+    if (gainRatio < 3 && gainRatio > -2) return;
 
     // 持仓时间
     const holdingTime = calculateDays(buyData.date, item.date);

@@ -36,17 +36,27 @@ const columns = ref([
     align: "center",
   },
 ]);
+
+const currentIndex = ref<null | number>(0);
+const onItemClick = (row: Stock, index: number) => {
+  console.log(`🚀 > file: list.vue:42 > onItemClick > index:`, index);
+  currentIndex.value = index;
+  emit("onStockClick", row);
+};
 </script>
 
 <template>
   <div class="mock-dealing-list">
     <el-table v-loading="listLoading" :data="list" height="100%">
       <el-table-column v-for="col in columns" v-bind="col">
-        <template #default="{ row, column }">
+        <template #default="{ row, column, $index }">
           <template v-if="column.property === 'stock_name'">
-            <span class="name" @click="emit('onStockClick', row)">{{
-              row[column.property]
-            }}</span>
+            <span
+              class="name"
+              :class="{ 'name--active': currentIndex === $index }"
+              @click="onItemClick(row, $index)"
+              >{{ row[column.property] }}</span
+            >
           </template>
 
           <template v-if="column.property === 'total_market_value'">{{
@@ -81,6 +91,10 @@ const columns = ref([
   .name {
     color: #a1a100;
     cursor: pointer;
+
+    &--active {
+      color: yellow;
+    }
   }
 }
 </style>
