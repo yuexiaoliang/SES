@@ -1,5 +1,5 @@
-import { StockHistory, StockHistoryWithAny } from "@/apis/typings";
-import { EChartsOption, EffectScatterSeriesOption } from "echarts";
+import { StockHistoryWithAny } from "@/apis/typings";
+import { EChartsOption } from "echarts";
 
 export default (data: StockHistoryWithAny[]) => {
   const dataZoomStart = data.length - 120;

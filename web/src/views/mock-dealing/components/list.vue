@@ -2,13 +2,14 @@
 import { ref } from "vue";
 import { formatPrice } from "@/utils/common";
 import { useStockList } from "@/hooks/stock";
-import { Stock } from '@/apis/typings';
+import { Stock } from "@/apis/typings";
 
 const emit = defineEmits<{
   (e: "onStockClick", stock: Stock): void;
+  (e: "onFirstLoaded", stocks: Stock[]): void;
 }>();
 
-const { list, loading: listLoading } = useStockList();
+const { list, loading: listLoading } = useStockList(emit);
 const columns = ref([
   {
     prop: "stock_name",
@@ -38,7 +39,7 @@ const columns = ref([
 </script>
 
 <template>
-  <div class="home-list">
+  <div class="mock-dealing-list">
     <el-table v-loading="listLoading" :data="list" height="100%">
       <el-table-column v-for="col in columns" v-bind="col">
         <template #default="{ row, column }">
@@ -58,8 +59,10 @@ const columns = ref([
 </template>
 
 <style lang="scss" scoped>
-.home-list {
+.mock-dealing-list {
+  padding: 0 10px 10px;
   height: 100%;
+  box-sizing: border-box;
 
   :deep(.el-table .el-table__cell) {
     padding: 0;

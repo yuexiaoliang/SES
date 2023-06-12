@@ -2,10 +2,12 @@ import { ref } from "vue";
 import { Stock } from "@/apis/typings";
 import { getStockList } from "@/apis/stock";
 
-export const useStockList = () => {
+export const useStockList = (emit: any) => {
+  let firstLoaded = false;
+
   const form = ref({
     page_current: 1,
-    page_size: 100,
+    page_size: 50
   });
 
   const list = ref<Stock[]>([]);
@@ -21,6 +23,11 @@ export const useStockList = () => {
 
       total.value = _total;
       list.value = _list;
+
+      if (!firstLoaded) {
+        emit("onFirstLoaded", _list);
+        firstLoaded = true;
+      }
     } finally {
       loading.value = false;
     }
