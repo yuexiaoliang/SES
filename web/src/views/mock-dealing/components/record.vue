@@ -39,11 +39,17 @@ const overview = computed(() => {
     0
   );
 
+  // 总持仓时间
+  const totalHoldingTime = record.value.reduce((prev, curr) => {
+    return prev + curr.sell!.holdingTime;
+  }, 0);
+
   return {
     total,
     profit,
     loss,
     totalProfit,
+    totalHoldingTime,
   };
 });
 
@@ -62,7 +68,9 @@ const onItemClick = (item: TradingRecord, index: number) => {
         总<b>{{ overview.total }}</b> | 盈<b>{{ overview.profit }}</b> | 亏<b>{{
           overview.loss
         }}</b>
-        | 利<b>{{ overview.totalProfit }}</b>
+        | 利<b>{{ overview.totalProfit }} </b> | 持<b
+          >{{ overview.totalHoldingTime }} 天</b
+        >
       </p>
     </header>
 
