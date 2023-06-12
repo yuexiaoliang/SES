@@ -79,6 +79,9 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   // 持仓数量（股）
   let holdings = 0;
 
+  // 持仓时间
+  let holdingTime = 0;
+
   // 交易记录
   const records: TradingRecord[] = [];
 
@@ -195,7 +198,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     const price = calculatePrice(item);
 
     // 持仓时间
-    const holdingTime = calculateDays(buyData.date, item.date);
+    holdingTime += 1;
 
     // 卖出总金额
     const total = calculateSellCost(price, holdings, stock);
@@ -228,6 +231,10 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
       // 状态变更为未持仓
       status = 0;
 
+      // 重置持仓时间
+      const _holdingTime = holdingTime;
+      holdingTime = 0;
+
       return {
         // 时间
         date: item.date,
@@ -257,7 +264,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
         type: "卖出",
 
         // 持仓时间
-        holdingTime,
+        holdingTime: _holdingTime,
 
         history: { ...item },
       };
