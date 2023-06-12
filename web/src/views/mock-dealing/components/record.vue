@@ -11,23 +11,27 @@ const props = defineProps<{
   record: TradingRecord[];
 }>();
 
+const record = computed(() => {
+  return props.record.filter((item) => item.sell);
+});
+
 const overview = computed(() => {
   // 总次数
-  const total = props.record.length;
+  const total = record.value.length;
 
   // 盈利次数
-  const profit = props.record.filter(
+  const profit = record.value.filter(
     (item) => item.sell && item.sell.profit > 0
   ).length;
 
   // 亏损次数
-  const loss = props.record.filter(
+  const loss = record.value.filter(
     (item) => item.sell && item.sell.profit < 0
   ).length;
 
   // 总盈利
   const totalProfit = formatNumber(
-    props.record
+    record.value
       .filter((item) => item.sell)
       .reduce((prev, curr) => {
         return prev + curr.sell!.profit;

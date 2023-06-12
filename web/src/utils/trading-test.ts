@@ -129,8 +129,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
 
     if (!isEstablish) return;
 
-    const price =
-      item.opening_price + (item.closing_price - item.opening_price);
+    const price = calculatePrice(item);
 
     // 买入股票数量（手）
     let _count = Math.floor(availableFunds / (price * 100));
@@ -193,8 +192,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     const buyTotal = buyData.total;
 
     // 单价
-    const price =
-      item.opening_price + (item.closing_price - item.opening_price);
+    const price = calculatePrice(item);
 
     // 持仓时间
     const holdingTime = calculateDays(buyData.date, item.date);
@@ -214,7 +212,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     // 高于 - 2 % 或
     // MACD 低于上一个 MACD
     if (
-      gainRatio > 5 ||
+      // gainRatio > 5 ||
       gainRatio < -3 ||
       (macd && prevMacd && macd < prevMacd)
     ) {
@@ -321,4 +319,14 @@ export function calculateDays(start: string, end: string): number {
   const endDate = dayjs(end);
   const diff = endDate.diff(startDate, "day");
   return diff;
+}
+
+// 计算单价
+// 模拟可能的买入、卖出价格
+export function calculatePrice(item: StockHistory) {
+  return formatNumber(
+    item.closing_price +
+      (item.opening_price - item.closing_price) * Math.random()
+  );
+  return item.closing_price;
 }
