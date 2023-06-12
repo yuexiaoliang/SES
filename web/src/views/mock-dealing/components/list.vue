@@ -39,7 +39,6 @@ const columns = ref([
 
 const currentIndex = ref<null | number>(0);
 const onItemClick = (row: Stock, index: number) => {
-  console.log(`🚀 > file: list.vue:42 > onItemClick > index:`, index);
   currentIndex.value = index;
   emit("onStockClick", row);
 };

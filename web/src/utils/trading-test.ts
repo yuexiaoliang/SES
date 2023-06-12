@@ -96,7 +96,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     }
 
     if (status === 1) {
-      const sellRecord = sell(item);
+      const sellRecord = sell(item, index);
       if (!sellRecord) return;
       const record = records[records.length - 1];
       record.sell = sellRecord;
@@ -129,16 +129,20 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
 
     if (!isEstablish) return;
 
+    const price =
+      item.opening_price + (item.closing_price - item.opening_price);
+
     // 买入股票数量（手）
-    let _count = Math.floor(availableFunds / (item.closing_price * 100));
+    let _count = Math.floor(availableFunds / (price * 100));
+    if (_count <= 0) return;
 
     // 总金额
-    let total = calculateBuyCost(_count * item.closing_price * 100, stock);
+    let total = calculateBuyCost(_count * price * 100, stock);
 
     // 动态计算买入数量以及总额
     while (total > availableFunds) {
       _count -= 1;
-      total = calculateBuyCost(_count * item.closing_price * 100, stock);
+      total = calculateBuyCost(_count * price * 100, stock);
     }
 
     // 持仓
@@ -160,7 +164,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
       date: item.date,
 
       // 买入单价
-      price: item.closing_price,
+      price,
 
       // 买入成本
       cost: _cost,
@@ -183,19 +187,14 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   }
 
   // 卖出
-  function sell(item: StockHistory): SellRecord | undefined {
+  function sell(item: StockHistory, index: number): SellRecord | undefined {
     const buyData = records[records.length - 1].buy as BuyRecord;
 
-    const buyPrice = buyData.price;
+    const buyTotal = buyData.total;
 
     // 单价
-    const price = item.closing_price;
-
-    // 收益率
-    const gainRatio = formatNumber(((price - buyPrice) / buyPrice) * 100);
-
-    // 如果收益率低于 5% 并且 高于 -2% 则继续持有
-    if (gainRatio < 3 && gainRatio > -2) return;
+    const price =
+      item.opening_price + (item.closing_price - item.opening_price);
 
     // 持仓时间
     const holdingTime = calculateDays(buyData.date, item.date);
@@ -203,51 +202,68 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     // 卖出总金额
     const total = calculateSellCost(price, holdings, stock);
 
-    // 可用资金
-    availableFunds = formatNumber(availableFunds + total);
+    // 收益率
+    const gainRatio = formatNumber(((total - buyTotal) / buyTotal) * 100);
 
-    // 利润
-    const profit = formatNumber(availableFunds - principal);
+    const { macd } = item;
 
-    // 本金
-    principal = availableFunds;
+    const prevItem = data[index - 1];
+    const { macd: prevMacd } = prevItem;
 
-    // 状态变更为未持仓
-    status = 0;
-
-    return {
-      // 时间
-      date: item.date,
-
-      // 卖出单价
-      price,
-
-      // 卖出数量
-      holdings,
-
-      // 总金额
-      total,
-
+    // 如果收益率低于 5% 或
+    // 高于 - 2 % 或
+    // MACD 低于上一个 MACD
+    if (
+      gainRatio > 5 ||
+      gainRatio < -3 ||
+      (macd && prevMacd && macd < prevMacd)
+    ) {
       // 可用资金
-      availableFunds,
-
-      // 本金
-      principal,
+      availableFunds = formatNumber(availableFunds + total);
 
       // 利润
-      profit,
+      const profit = formatNumber(availableFunds - principal);
 
-      // 收益率
-      gainRatio,
+      // 本金
+      principal = availableFunds;
 
-      // 交易类型
-      type: "卖出",
+      // 状态变更为未持仓
+      status = 0;
 
-      // 持仓时间
-      holdingTime,
+      return {
+        // 时间
+        date: item.date,
 
-      history: { ...item },
-    };
+        // 卖出单价
+        price,
+
+        // 卖出数量
+        holdings,
+
+        // 总金额
+        total,
+
+        // 可用资金
+        availableFunds,
+
+        // 本金
+        principal,
+
+        // 利润
+        profit,
+
+        // 收益率
+        gainRatio,
+
+        // 交易类型
+        type: "卖出",
+
+        // 持仓时间
+        holdingTime,
+
+        history: { ...item },
+      };
+    }
   }
 };
 

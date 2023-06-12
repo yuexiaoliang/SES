@@ -32,7 +32,7 @@ const overview = computed(() => {
       .reduce((prev, curr) => {
         return prev + curr.sell!.profit;
       }, 0),
-    2
+    0
   );
 
   return {
