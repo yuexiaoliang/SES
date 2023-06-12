@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/list', name='获取股票列表', response_model=StocksResponse)
-def get_stocks(page_size: int = 10, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
+def get_stocks(page_size: int = 5000, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
     stocks = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
 
     # 使用参数化查询，避免注入攻击

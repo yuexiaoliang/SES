@@ -1,4 +1,5 @@
 import collector.collector as collector
+from database.index_maintenance import create_index
 
 if __name__ == '__main__':
     # 采集 A 股所有报告期
@@ -12,4 +13,6 @@ if __name__ == '__main__':
     # 采集 A 股历史 (日线) 数据
     # collector.collect_stocks_history(['301337'])
     # 采集 A 股所有数据
-    collector.all()
+    # collector.all()
+
+    create_index()
