@@ -31,7 +31,8 @@ const overview = computed(() => {
       .filter((item) => item.sell)
       .reduce((prev, curr) => {
         return prev + curr.sell!.profit;
-      }, 0)
+      }, 0),
+    2
   );
 
   return {
@@ -47,14 +48,10 @@ const overview = computed(() => {
   <div class="mock-dealing-record">
     <header class="overview">
       <p>
-        总<b>{{ overview.total }}</b
-        >次 | 盈<b>{{ overview.profit }}</b
-        >次 | 亏<b>{{ overview.loss }}</b
-        >次
-      </p>
-      <p>
-        利润<b>{{ overview.totalProfit }}</b
-        >元
+        总<b>{{ overview.total }}</b> | 盈<b>{{ overview.profit }}</b> | 亏<b>{{
+          overview.loss
+        }}</b>
+        | 利<b>{{ overview.totalProfit }}</b>
       </p>
     </header>
 
@@ -97,6 +94,7 @@ const overview = computed(() => {
   .overview {
     padding: 10px;
     border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
 
     b {
       padding: 0 5px;
