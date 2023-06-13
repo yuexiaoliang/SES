@@ -12,7 +12,7 @@ const chartData = ref<StockHistory[]>([]);
 
 const load = async (stock: Stock) => {
   const { data } = await getStockDailyData(stock.stock_code, {
-    start_date: "2023-01-01"
+    start_date: "2022-01-01"
   });
 
   const [_record, _data] = tradingTest(stock, data);

@@ -224,10 +224,10 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
 
     /**
      * 卖出
-     * 1. 动态亏损大于 2%
+     * 1. 动态亏损大于 3.5%
      * 2. MACD 小于等于上一日 MACD
      */
-    if (gainRatio < -2 || macd! <= prevMacd!) {
+    if (gainRatio < -3.5 || macd! <= prevMacd!) {
       // 持仓时间
       const holdingTime = calculateDays(buyData.date, item.date);
 
