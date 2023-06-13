@@ -11,7 +11,9 @@ import Record from "./components/record.vue";
 const chartData = ref<StockHistory[]>([]);
 
 const load = async (stock: Stock) => {
-  const { data } = await getStockDailyData(stock.stock_code);
+  const { data } = await getStockDailyData(stock.stock_code, {
+    start_date: "2023-01-01"
+  });
 
   const [_record, _data] = tradingTest(stock, data);
   chartData.value = _data;

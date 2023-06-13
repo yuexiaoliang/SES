@@ -119,19 +119,23 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     if (!dif || !dea) return;
 
     const prevItem = data[index - 1];
-    const { dif: prevDif, dea: prevDea } = prevItem;
+    const { dif: prevDif, dea: prevDea, macd: prevMacd } = prevItem;
 
     if (!prevDif || !prevDea) return;
 
     // MACD 黄金交叉
-    const isGoldenCross = dif > dea && prevDif < prevDea;
+    // const isGoldenCross = dif > dea && prevDif < prevDea;
+    const isGoldenCross = true;
 
     // MACD 零轴之上
-    const isAboveZeroAxis = dif > 0 && dea > 0;
+    // const isAboveZeroAxis = dif > 0 && dea > 0;
+    const isAboveZeroAxis = true;
+
+    // MACD 是否上升
+    const isMacdUp = item.macd && prevMacd && item.macd > prevMacd;
 
     // 买入条件成立
-    const isEstablish =
-      isGoldenCross && isAboveZeroAxis && item.macd && item.macd > 0;
+    const isEstablish = isGoldenCross && isAboveZeroAxis && isMacdUp;
 
     if (!isEstablish) return;
 
