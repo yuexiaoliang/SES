@@ -91,7 +91,8 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   let status = 0; // 0: 未持仓 1: 持仓中
 
   data.forEach((item, index) => {
-    if (index === 0) return;
+    if (index < 2) return;
+
     if (status === 0) {
       const record = buy(item, index);
       if (record) {
@@ -115,13 +116,15 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
 
   // 买入
   function buy(item: StockHistory, index: number): BuyRecord | undefined {
-    const { dif, dea } = item;
+    const { dif, dea, macd } = item;
     if (!dif || !dea) return;
 
     const prevItem = data[index - 1];
     const { dif: prevDif, dea: prevDea, macd: prevMacd } = prevItem;
 
     if (!prevDif || !prevDea) return;
+
+    if (!macd || !prevMacd) return;
 
     // MACD 黄金交叉
     // const isGoldenCross = dif > dea && prevDif < prevDea;
@@ -132,7 +135,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     const isAboveZeroAxis = true;
 
     // MACD 是否上升
-    const isMacdUp = item.macd && prevMacd && item.macd > prevMacd;
+    const isMacdUp = macd > prevMacd;
 
     // 买入条件成立
     const isEstablish = isGoldenCross && isAboveZeroAxis && isMacdUp;
@@ -140,6 +143,7 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     if (!isEstablish) return;
 
     const price = calculatePrice(item);
+    // const price = item.closing_price
 
     // 买入股票数量（手）
     let _count = Math.floor(availableFunds / (price * 100));
@@ -218,14 +222,12 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     const prevItem = data[index - 1];
     const { macd: prevMacd } = prevItem;
 
-    // 如果收益率低于 5% 或
-    // 高于 - 2 % 或
-    // MACD 低于上一个 MACD
-    if (
-      // gainRatio > 5 ||
-      gainRatio < -3 ||
-      (macd && prevMacd && macd < prevMacd)
-    ) {
+    /**
+     * 卖出
+     * 1. 动态亏损大于 2%
+     * 2. MACD 小于等于上一日 MACD
+     */
+    if (gainRatio < -2 || macd! <= prevMacd!) {
       // 持仓时间
       const holdingTime = calculateDays(buyData.date, item.date);
 
@@ -348,5 +350,5 @@ export function calculatePrice(item: StockHistory) {
     item.closing_price +
       (item.opening_price - item.closing_price) * Math.random()
   );
-  return item.closing_price;
+  // return item.closing_price;
 }
