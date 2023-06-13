@@ -44,12 +44,18 @@ const overview = computed(() => {
     return prev + curr.sell!.holdingTime;
   }, 0);
 
+  // 盘中总持仓时间
+  const totalIntradayHoldingTime = record.value.reduce((prev, curr) => {
+    return prev + curr.sell!.intradayHoldingTime;
+  }, 0);
+
   return {
     total,
     profit,
     loss,
     totalProfit,
     totalHoldingTime,
+    totalIntradayHoldingTime,
   };
 });
 
@@ -65,12 +71,27 @@ const onItemClick = (item: TradingRecord, index: number) => {
   <div class="mock-dealing-record">
     <header class="overview">
       <p>
-        总<b>{{ overview.total }}</b> | 盈<b>{{ overview.profit }}</b> | 亏<b>{{
-          overview.loss
-        }}</b>
-        | 利<b>{{ overview.totalProfit }} </b> | 持<b
-          >{{ overview.totalHoldingTime }} 天</b
+        <span
+          >总<b>{{ overview.total }}</b></span
         >
+        |
+        <span
+          >盈<b> {{ overview.profit }}</b></span
+        >
+        |
+        <span
+          >亏<b>{{ overview.loss }}</b></span
+        >
+        |
+        <span
+          >利<b>{{ overview.totalProfit }} </b></span
+        >
+      </p>
+
+      <p>
+        总持<b>{{ overview.totalHoldingTime }}</b
+        >天 | 盘持<b>{{ overview.totalIntradayHoldingTime }}</b
+        >天
       </p>
     </header>
 
@@ -109,6 +130,10 @@ const onItemClick = (item: TradingRecord, index: number) => {
 
 <style lang="scss" scoped>
 .mock-dealing-record {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
   .overview {
     padding: 10px;
     border-bottom: 1px solid var(--border-color);
@@ -122,6 +147,9 @@ const onItemClick = (item: TradingRecord, index: number) => {
   }
 
   .record {
+    @extend .scrollbar;
+
+    flex: 1;
     padding: 10px;
 
     &__item {

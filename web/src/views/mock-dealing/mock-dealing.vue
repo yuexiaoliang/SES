@@ -6,7 +6,7 @@ import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.v
 import { tradingTest, TradingRecord } from "@/utils/trading-test";
 
 import List from "./components/list.vue";
-import Record, { RecordAnchorType } from "./components/record.vue";
+import Record from "./components/record.vue";
 
 const chartData = ref<StockHistory[]>([]);
 

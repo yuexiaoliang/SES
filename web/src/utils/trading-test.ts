@@ -60,6 +60,9 @@ interface SellRecord {
   // 交易类型
   type: "卖出";
 
+  // 盘中持仓时间
+  intradayHoldingTime: number;
+
   // 持仓时间
   holdingTime: number;
 }
@@ -71,7 +74,7 @@ export interface TradingRecord {
 
 export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   // 本金
-  let principal = 7000;
+  let principal = 10000;
 
   // 可用资金
   let availableFunds = principal;
@@ -79,8 +82,8 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
   // 持仓数量（股）
   let holdings = 0;
 
-  // 持仓时间
-  let holdingTime = 0;
+  // 盘中持仓时间
+  let intradayHoldingTime = 0;
 
   // 交易记录
   const records: TradingRecord[] = [];
@@ -197,8 +200,8 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
     // 单价
     const price = calculatePrice(item);
 
-    // 持仓时间
-    holdingTime += 1;
+    // 盘中持仓时间
+    intradayHoldingTime += 1;
 
     // 卖出总金额
     const total = calculateSellCost(price, holdings, stock);
@@ -219,6 +222,9 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
       gainRatio < -3 ||
       (macd && prevMacd && macd < prevMacd)
     ) {
+      // 持仓时间
+      const holdingTime = calculateDays(buyData.date, item.date);
+
       // 可用资金
       availableFunds = formatNumber(availableFunds + total);
 
@@ -232,8 +238,8 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
       status = 0;
 
       // 重置持仓时间
-      const _holdingTime = holdingTime;
-      holdingTime = 0;
+      const _intradayHoldingTime = intradayHoldingTime;
+      intradayHoldingTime = 0;
 
       return {
         // 时间
@@ -263,8 +269,11 @@ export const tradingTest = (stock: Stock, data: StockHistoryWithAny[]) => {
         // 交易类型
         type: "卖出",
 
+        // 盘中持仓时间
+        intradayHoldingTime: _intradayHoldingTime,
+
         // 持仓时间
-        holdingTime: _holdingTime,
+        holdingTime,
 
         history: { ...item },
       };
