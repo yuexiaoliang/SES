@@ -64,9 +64,9 @@ def get_stock(code: str, client: MongoClient = Depends(get_mongo_client)):
 def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: MongoClient = Depends(get_mongo_client)):
     ''' 获取股票日线数据
 
-    :param start_date: 开始日期，如果不传则默认为 end_date 前 30 天
+    :param start_date: 开始日期
 
-    :param end_date: 结束日期，如果不传则默认为当前时间
+    :param end_date: 结束日期
 
     :return: 股票日线数据
     '''
@@ -82,10 +82,10 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         query['date'] = {}
 
     if (start_date):
-        query['date']['$gt'] = start_date
+        query['date']['$gte'] = start_date
 
     if (end_date):
-        query['date']['$lte'] = end_date
+        query['date']['$lt'] = end_date
 
 
     cursor = stock_history.find(query)

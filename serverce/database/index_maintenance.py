@@ -7,7 +7,8 @@ def create_index():
     collection = client['stock']['stocks_history']
 
     # 以股票代码创建索引
-    collection.create_index([('stock_code', pymongo.ASCENDING)])
+    collection.create_index([('stock_code', pymongo.DESCENDING)])
+    collection.create_index([('date', pymongo.DESCENDING)])
 
 
 if __name__ == "__main__":

@@ -4,6 +4,10 @@ import time
 import pandas
 from typing import List
 
+def format_float(value: float, precision: int = 3) -> float:
+    """ 格式化浮点数 """
+    return round(value, precision)
+
 
 def get_current_time():
     """ 获取当前时间的时间戳 """
