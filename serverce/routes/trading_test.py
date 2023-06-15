@@ -227,16 +227,13 @@ class StockTestResponse(ResponseBaseModel):
 
     data: Any
 
-@router.get('/', name='模拟炒股测试', response_model=StockTestResponse)
-def test_all(code: str = '', start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+@router.get('/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
+def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
     '''模拟炒股测试
+    :path code: 股票代码
 
     :param start_date: 开始日期
-
     :param end_date: 结束日期
-
-    :param code: 股票代码
-
     :param raw_funds: 初始资金，默认为 10000
 
     :return: 测试数据
