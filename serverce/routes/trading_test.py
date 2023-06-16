@@ -108,7 +108,7 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
 
     # 查询结果为空时，返回默认值
     if not cursor:
-        return {"message": "未找到符合条件的数据", "code": 0, "data": []}
+        return {"message": "未找到符合条件的数据", "code": 0, "data": None}
 
     _list = convert_list_objectid_to_str(list(cursor))
 
@@ -134,16 +134,24 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
         if (not macd or not prevMacd):
             return
 
+        opening = record['opening_price']
+        closing = record['closing_price']
+
         # MACD 是否上升
         isMacdUp = macd > prevMacd;
 
+        # 价格是否上升
+        isPriceUp = closing > prevRecord['closing_price'];
+
         # 买入条件成立
-        isEstablish =  isMacdUp;
+        isEstablish = isMacdUp and isPriceUp;
 
         if (not isEstablish):
             return;
 
-        price = calculatePrice(record);
+        # 单价
+        # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
+        price = format_float(closing + (closing - opening) * random.random())
 
         # 买入股票数量（手）
         _count = math.floor(balance / (price * 100));
@@ -177,7 +185,7 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
             'date': record['date'],
 
             # 买入单价
-            price: price,
+            'price': price,
 
             # 买入成本
             'cost': _cost,
@@ -207,30 +215,33 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
         nonlocal intraday_holding_time
         nonlocal balance
 
-        buyData = records[-1]['buy']
-
-        buyTotal, holdings = buyData['total'], buyData['holdings']
-
-        # 单价
-        price = calculatePrice(record)
-
-        # 盘中持仓时间
-        intraday_holding_time += 1;
-
-        # 卖出总金额
-        total = calculateSellCost(price, holdings);
-
-        # 收益率
-        gain_ratio = format_float(((total - buyTotal) / buyTotal) * 100);
-
-        macd  = record['macd'];
-        prevMacd = prevRecord['macd']
+        stopLossRatio = -0.025
 
         ''' 卖出
         1. 动态亏损大于 3.5%
-        2. MACD 小于等于上一日 MACD
+        2. 涨跌幅下降 2.5%
+        3. MACD 小于等于上一日 MACD
         '''
-        if (gain_ratio < -3.5 or macd <= prevMacd):
+        if (record['change_percent'] < stopLossRatio * 100):
+            buyData = records[-1]['buy']
+
+            buyTotal, holdings = buyData['total'], buyData['holdings']
+
+            prevClosing = prevRecord['closing_price']
+
+            # 单价
+            # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
+            price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
+
+            # 盘中持仓时间
+            intraday_holding_time += 1;
+
+            # 卖出总金额
+            total = calculateSellCost(price, holdings);
+
+            # 收益率
+            gain_ratio = format_float(((total - buyTotal) / buyTotal) * 100);
+
             # 持仓时间
             holding_time = calculateDays(buyData['date'], record['date']);
 
@@ -327,5 +338,8 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
     return {
         'message': '获取成功',
         'code': 200,
-        'data': records
+        'data': {
+            'records': records,
+            'raw_funds': raw_funds
+        }
     }
