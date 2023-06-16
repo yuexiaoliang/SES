@@ -78,7 +78,7 @@ class StockTestResponse(ResponseBaseModel):
     data: Any
 
 @router.get('/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
-def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
     '''模拟炒股测试
     :path code: 股票代码
 
@@ -140,8 +140,8 @@ def test_all(code: str, start_date:str = '', end_date: str = '', raw_funds: floa
         # MACD 是否上升
         isMacdUp = macd > prevMacd;
 
-        # 价格是否上升
-        isPriceUp = closing > prevRecord['closing_price'];
+        # 价格是否上升（跌涨辐大于 0）
+        isPriceUp = record['change_percent'] > 0
 
         # 买入条件成立
         isEstablish = isMacdUp and isPriceUp;
