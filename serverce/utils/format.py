@@ -49,9 +49,9 @@ def convert_dict_objectid_to_str(data: dict) -> dict:
     """
 
     if '_id' in data:
+        data['id'] = str(data['_id'])
         data = {k: str(v) if isinstance(v, ObjectId) else v for k, v in data.items() if k != '_id'}
     return data
-    # return {**data, 'id': str(data['_id'])} if '_id' in data else data
 
 
 def convert_list_objectid_to_str(list: List[dict]) -> List[dict]:

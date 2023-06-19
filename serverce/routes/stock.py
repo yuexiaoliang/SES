@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get('/list', name='获取股票列表', response_model=StocksResponse)
-def get_stocks(page_size: int = 10000, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
+def get_stocks(page_size: int = 100, page_current: int = 1, client: MongoClient = Depends(get_mongo_client)):
     stocks = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
 
     # 使用参数化查询，避免注入攻击
@@ -28,6 +28,7 @@ def get_stocks(page_size: int = 10000, page_current: int = 1, client: MongoClien
         }}
 
     result = list(cursor)
+    print(result)
 
     total = stocks.count_documents({})
 
@@ -95,6 +96,7 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         return {"message": "未找到符合条件的数据", "code": 0, "data": []}
 
     result = list(cursor)
+    print(result)
 
     return {
         "message": "获取成功",
