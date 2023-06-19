@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { getStockDailyData } from "@/apis/stock";
+import { getTradingTest } from "@/apis/trading-test";
+import type { StockTestRecord } from "@/apis/trading-test";
 import { Stock, StockHistory } from "@/apis/typings";
+import { addBSToData } from "@/utils/trading-test";
 import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.vue";
-import { tradingTest, TradingRecord } from "@/utils/trading-test";
 
 import List from "./components/list.vue";
 import Record from "./components/record.vue";
@@ -11,13 +13,17 @@ import Record from "./components/record.vue";
 const chartData = ref<StockHistory[]>([]);
 
 const load = async (stock: Stock) => {
-  const { data } = await getStockDailyData(stock.stock_code, {
-    start_date: "2022-01-01"
+  const { data: testData } = await getTradingTest(stock.stock_code, {
+    start_date: "2023-01-01",
+    raw_funds: 10000,
   });
 
-  const [_record, _data] = tradingTest(stock, data);
-  chartData.value = _data;
-  records.value = _record;
+  const { data } = await getStockDailyData(stock.stock_code, {
+    start_date: "2022-01-01",
+  });
+
+  chartData.value = addBSToData(data, testData.records);;
+  records.value = testData.records
 };
 
 const onListFirstLoaded = (stocks: Stock[]) => {
@@ -25,14 +31,14 @@ const onListFirstLoaded = (stocks: Stock[]) => {
   load(firstStock);
 };
 
-const records = ref<TradingRecord[]>([]);
+const records = ref<StockTestRecord[]>([]);
 
 const onStockClick = (stock: Stock) => {
   load(stock);
 };
 
 const candlestickChart = ref();
-const onRecordAnchorClick = (record: TradingRecord) => {
+const onRecordAnchorClick = (record: StockTestRecord) => {
   const buyDate = record.buy.date;
   const sellDate = record.sell?.date;
 

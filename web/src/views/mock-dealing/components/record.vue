@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { TradingRecord } from "@/utils/trading-test";
+import type { StockTestRecord } from "@/apis/trading-test";
 import { formatNumber } from "@/utils/formatter";
 
 const emit = defineEmits<{
-  (e: "onRecordAnchorClick", record: TradingRecord): void;
+  (e: "onRecordAnchorClick", record: StockTestRecord): void;
 }>();
 
 const props = defineProps<{
-  record: TradingRecord[];
+  record: StockTestRecord[];
 }>();
 
 const tabs = ref(["全部", "盈利", "亏损"]);
@@ -61,12 +61,12 @@ const overview = computed(() => {
 
   // 总持仓时间
   const totalHoldingTime = allRecord.value.reduce((prev, curr) => {
-    return prev + curr.sell!.holdingTime;
+    return prev + curr.sell!.holding_time;
   }, 0);
 
   // 盘中总持仓时间
   const totalIntradayHoldingTime = allRecord.value.reduce((prev, curr) => {
-    return prev + curr.sell!.intradayHoldingTime;
+    return prev + curr.sell!.intraday_holding_time;
   }, 0);
 
   return {
@@ -81,7 +81,7 @@ const overview = computed(() => {
 
 const currentIndex = ref<number | null>(null);
 
-const onItemClick = (item: TradingRecord, index: number) => {
+const onItemClick = (item: StockTestRecord, index: number) => {
   currentIndex.value = index;
   emit("onRecordAnchorClick", item);
 };
@@ -144,16 +144,16 @@ const onItemClick = (item: TradingRecord, index: number) => {
           <p>买入单价：{{ item.buy.price }}</p>
           <p>买入数量：{{ item.buy.holdings }} 股</p>
           <p>买入总金额：{{ item.buy.total }}</p>
-          <p>买入后剩余资金：{{ item.buy.availableFunds }}</p>
+          <p>买入后剩余资金：{{ item.buy.available_funds }}</p>
 
           <template v-if="item.sell">
             <p>卖出时间：{{ item.sell.date }}</p>
             <p>卖出单价：{{ item.sell.price }}</p>
             <p>卖出数量：{{ item.sell.holdings }} 股</p>
             <p>卖出总金额：{{ item.sell.total }}</p>
-            <p>卖出后剩余资金：{{ item.sell.availableFunds }}</p>
-            <p>持仓天数：{{ item.sell.holdingTime }} 天</p>
-            <p>收益率：{{ item.sell.gainRatio }} %</p>
+            <p>卖出后剩余资金：{{ item.sell.available_funds }}</p>
+            <p>持仓天数：{{ item.sell.holding_time }} 天</p>
+            <p>收益率：{{ item.sell.gain_ratio }} %</p>
             <p>利润：{{ item.sell.profit }}</p>
           </template>
         </li>

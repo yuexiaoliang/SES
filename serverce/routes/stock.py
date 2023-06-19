@@ -28,7 +28,6 @@ def get_stocks(page_size: int = 100, page_current: int = 1, client: MongoClient 
         }}
 
     result = list(cursor)
-    print(result)
 
     total = stocks.count_documents({})
 
@@ -96,7 +95,6 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         return {"message": "未找到符合条件的数据", "code": 0, "data": []}
 
     result = list(cursor)
-    print(result)
 
     return {
         "message": "获取成功",

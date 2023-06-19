@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 from models.stock import StockResponse, StockHistoryResponse, StockHistory
 from models.common import ResponseListModel, ResponseBaseModel
+from models.trading_test import StockTestResponse
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
@@ -70,12 +71,6 @@ def calculatePrice(item):
     return format_float(opening + (opening - closing) * random.random())
     # return item.closing_price
 
-
-class StockTestResponse(ResponseBaseModel):
-    class config:
-        title = "股票交易测试 Response"
-
-    data: Any
 
 @router.get('/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
 def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
@@ -202,10 +197,7 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
             # 本金
             'principal': principal,
 
-            # 交易类型
-            'type': "买入",
-
-            # 'raw': { **record },
+            'raw': { **record },
         }
 
         return result;
@@ -282,16 +274,13 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
                 # 收益率
                 'gain_ratio': gain_ratio,
 
-                # 交易类型
-                'type': "卖出",
-
                 # 盘中持仓时间
                 'intraday_holding_time': _intraday_holding_time,
 
                 # 持仓时间
                 'holding_time': holding_time,
 
-                # 'raw': { **record },
+                'raw': { **record },
             }
 
     # 遍历 _list
@@ -337,7 +326,7 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
 
     return {
         'message': '获取成功',
-        'code': 200,
+        'code': 0,
         'data': {
             'records': records,
             'raw_funds': raw_funds
