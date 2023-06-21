@@ -1,5 +1,5 @@
 
-from typing import List
+from typing import Any, List
 from pydantic import BaseModel, Field
 from pydantic import BaseModel
 from models.common import ResponseBaseModel
@@ -45,3 +45,14 @@ class StockTestResponse(ResponseBaseModel):
         title = "股票交易测试 Response"
 
     data: StockTestResponseData = Field(..., title='返回的数据')
+
+
+class StocksTestResponseData(BaseModel):
+    raw_funds: float = Field(..., title='初始资金')
+    records: List[List[StockTestRecord]] = Field(..., title='交易记录')
+
+class StocksTestResponse(ResponseBaseModel):
+    class config:
+        title = "多只股票交易测试 Response"
+
+    data: StocksTestResponseData = Field(..., title='返回的数据')

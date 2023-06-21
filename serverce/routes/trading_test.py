@@ -1,13 +1,11 @@
 import datetime
 import math
 import random
-from typing import Any
-from pydantic import BaseModel
+from typing import Any, List
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
-from models.stock import StockResponse, StockHistoryResponse, StockHistory
-from models.common import ResponseListModel, ResponseBaseModel
-from models.trading_test import StockTestResponse
+from models.stock import StockHistory
+from models.trading_test import StockTestResponse, StocksTestResponse
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
@@ -72,8 +70,7 @@ def calculatePrice(item):
     # return item.closing_price
 
 
-@router.get('/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
-def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+def trading(client, code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000):
     '''模拟炒股测试
     :path code: 股票代码
 
@@ -323,12 +320,34 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
     ''' 结果
     - 将所有的买入、卖出记录按日期排序
     '''
+    return records
+
+
+@router.get('/single/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
+def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+    return {
+        'message': '获取成功',
+        'code': 0,
+        'data': {
+            'records': trading(client, code, start_date, end_date, raw_funds),
+            'raw_funds': raw_funds
+        }
+    }
+
+
+@router.get('/stocks', name='多只股票模拟炒股测试', response_model=StocksTestResponse)
+def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+    result = []
+    stocksArr = stocks.split(',')
+
+    for stock in stocksArr:
+        result.append(trading(client, stock, start_date, end_date, raw_funds ))
 
     return {
         'message': '获取成功',
         'code': 0,
         'data': {
-            'records': records,
+            'records': result,
             'raw_funds': raw_funds
         }
     }
