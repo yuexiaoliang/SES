@@ -1,7 +1,6 @@
 import datetime
 import math
 import random
-from typing import Any, List
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 from models.stock import StockHistory
@@ -12,7 +11,6 @@ from utils.format import format_float
 from constants.enums import DatabaseNames, DatabaseCollectionNames
 
 router = APIRouter()
-
 
 def calculateTransferFee(total: float):
     '''计算过户费'''
@@ -70,7 +68,7 @@ def calculatePrice(item):
     # return item.closing_price
 
 
-def trading(client, code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000):
+def trading(data,  raw_funds: float = 10000):
     '''模拟炒股测试
     :path code: 股票代码
 
@@ -80,29 +78,6 @@ def trading(client, code: str, start_date:str = '', end_date: str = '', raw_fund
 
     :return: 测试数据
     '''
-    historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
-
-    query = {}
-
-    if (start_date or end_date):
-        query['date'] = {}
-
-    if (start_date):
-        query['date']['$gte'] = start_date
-
-    if (end_date):
-        query['date']['$lt'] = end_date
-
-    if (code):
-        query['stock_code'] = code
-
-    cursor = historyCollection.find(query)
-
-    # 查询结果为空时，返回默认值
-    if not cursor:
-        return {"message": "未找到符合条件的数据", "code": 0, "data": None}
-
-    _list = convert_list_objectid_to_str(list(cursor))
 
     # 0: 未持仓 1: 持仓中
     status = 0;
@@ -281,12 +256,12 @@ def trading(client, code: str, start_date:str = '', end_date: str = '', raw_fund
             }
 
     # 遍历 _list
-    for index, item in enumerate(_list):
+    for index, item in enumerate(data):
 
         if (index < 2):
             continue
 
-        prevItem = _list[index - 1]
+        prevItem = data[index - 1]
 
         if (status == 0):
             record = buy(item, prevItem)
@@ -325,11 +300,36 @@ def trading(client, code: str, start_date:str = '', end_date: str = '', raw_fund
 
 @router.get('/single/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
 def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+
+    historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
+
+    query = {}
+
+    if (start_date or end_date):
+        query['date'] = {}
+
+    if (start_date):
+        query['date']['$gte'] = start_date
+
+    if (end_date):
+        query['date']['$lt'] = end_date
+
+    if (code):
+        query['stock_code'] = code
+
+    cursor = historyCollection.find(query)
+
+    # 查询结果为空时，返回默认值
+    if not cursor:
+        return {"message": "未找到符合条件的数据", "code": 0, "data": None}
+
+    data = convert_list_objectid_to_str(list(cursor))
+
     return {
         'message': '获取成功',
         'code': 0,
         'data': {
-            'records': trading(client, code, start_date, end_date, raw_funds),
+            'records': trading(data, raw_funds),
             'raw_funds': raw_funds
         }
     }
@@ -338,10 +338,49 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
 @router.get('/stocks', name='多只股票模拟炒股测试', response_model=StocksTestResponse)
 def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
     result = []
-    stocksArr = stocks.split(',')
 
-    for stock in stocksArr:
-        result.append(trading(client, stock, start_date, end_date, raw_funds ))
+    historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
+
+    _codes = stocks.split(',')
+
+    query = {
+        'stock_code': { '$in': _codes }
+    }
+
+    if (start_date or end_date):
+        query['date'] = {}
+
+    if (start_date):
+        query['date']['$gte'] = start_date
+
+    if (end_date):
+        query['date']['$lt'] = end_date
+
+    pipeline = [
+        {
+            "$match": query
+        },
+        {
+            '$group': {
+                '_id': '$stock_code',  # 以 stock_code 作为分组依据
+                'data': {'$push': '$$ROOT'}  # 将每个分组的文档保存到一个数组中
+            }
+        },
+        {
+            '$project': {
+                '_id': 0,
+                'data': 1
+            }
+        }
+    ]
+
+    dataList = historyCollection.aggregate(pipeline)
+    dataList = [convert_list_objectid_to_str(item['data']) for item in dataList]
+
+    for item in dataList:
+        data = trading(item, raw_funds)
+        if (len(data) > 0):
+            result.append(data)
 
     return {
         'message': '获取成功',

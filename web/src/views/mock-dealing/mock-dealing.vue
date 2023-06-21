@@ -22,8 +22,8 @@ const load = async (stock: Stock) => {
     start_date: "2022-01-01",
   });
 
-  chartData.value = addBSToData(data, testData.records);;
-  records.value = testData.records
+  chartData.value = addBSToData(data, testData.records);
+  records.value = testData.records;
 };
 
 const onListFirstLoaded = (stocks: Stock[]) => {

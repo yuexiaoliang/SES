@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { formatPrice } from "@/utils/common";
 import { useStockList } from "@/hooks/stock";
 import { Stock } from "@/apis/typings";
+import { getTradingTestStocks } from '@/apis/trading-test';
 
 const emit = defineEmits<{
   (e: "onStockClick", stock: Stock): void;
@@ -10,6 +11,18 @@ const emit = defineEmits<{
 }>();
 
 const { list, loading: listLoading } = useStockList(emit);
+watch(
+  () => list.value,
+  async (val) => {
+    const codes = val.map(item => item.stock_code)
+    const res = await getTradingTestStocks({
+      stocks: codes,
+      raw_funds: 10000,
+      start_date: '2023-01-01'
+    })
+    console.log(res)
+  }
+);
 const columns = ref([
   {
     prop: "stock_name",
