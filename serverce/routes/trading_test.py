@@ -1,6 +1,7 @@
 import datetime
 import math
 import random
+from typing import Any
 from joblib import Parallel, delayed
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
@@ -81,6 +82,9 @@ def trading(data,  raw_funds: float = 10000):
 
     if (len(data) < 1): return
 
+    # 止损比例
+    stopLossRatio = -0.025
+
     stock_code = data[0]['stock_code']
 
     # 剩余资金
@@ -105,7 +109,6 @@ def trading(data,  raw_funds: float = 10000):
             if index < 2: continue
 
             prev = data[index - 1]
-            print(index)
             opening = item['opening_price']
             closing = item['closing_price']
             date = item['date']
@@ -118,24 +121,26 @@ def trading(data,  raw_funds: float = 10000):
 
                 # 买入股票数量（手）
                 _count = math.floor(balance / (price * 100));
-                # 买入股票数量（股）
-                _count2 = _count * 100
                 if (_count <= 0):
-                    return;
+                    continue;
 
                 # 总金额
                 total = calculateBuyCost(_count * price * 100);
 
                 # 动态计算买入数量以及总额
                 while (total > balance):
-                    _count -= 1;
-                total = calculateBuyCost(_count * price * 100);
+                    _count = _count - 1;
+                    total = calculateBuyCost(_count * price * 100);
 
+                # 买入股票数量（股）
+                _count2 = _count * 100
                 # 持仓
                 result['holdings'] = _count2
 
                 # 状态变为持仓
                 result['status'] = 'long'
+
+                balance = format_float(balance - total);
 
                 result['records'].append({
                     'type': 'buy',
@@ -145,9 +150,9 @@ def trading(data,  raw_funds: float = 10000):
                     'total': total
                 })
             else:
+
                 # 单价
                 # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
-                stopLossRatio = -0.025
                 prevClosing = prev['closing_price']
                 price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
 
@@ -219,7 +224,7 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
     }
 
 
-@router.get('/stocks', name='多只股票模拟炒股测试', response_model=StocksTestResponse)
+@router.get('/stocks', name='多只股票模拟炒股测试', response_model=Any)
 def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
     historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 

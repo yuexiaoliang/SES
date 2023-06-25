@@ -132,7 +132,7 @@ def trading(data,  raw_funds: float = 10000):
         # 动态计算买入数量以及总额
         while (total > balance):
             _count -= 1;
-        total = calculateBuyCost(_count * price * 100);
+            total = calculateBuyCost(_count * price * 100);
 
         # 持仓
         holdings = _count * 100;

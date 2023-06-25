@@ -71,4 +71,5 @@ class StocksTestResponse(ResponseBaseModel):
     class config:
         title = "多只股票交易测试 Response"
 
+    # data: StocksTestResponseData = Field(..., title='返回的数据')
     data: StockSimulatedTrading = Field(..., title='返回的数据')
