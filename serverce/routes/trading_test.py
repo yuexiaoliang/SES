@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 from models.stock import StockHistory
-from models.trading_test import StockTestResponse, StocksTestResponse
+from models.trading_test import StockTestResponse, StocksTestResponse, StockSimulatedTrading
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
@@ -66,7 +66,6 @@ def calculatePrice(item):
     opening = item['opening_price']
     closing = item['closing_price']
     return format_float(opening + (opening - closing) * random.random())
-    # return item.closing_price
 
 
 def trading(data,  raw_funds: float = 10000):
@@ -80,224 +79,101 @@ def trading(data,  raw_funds: float = 10000):
     :return: 测试数据
     '''
 
-    # 0: 未持仓 1: 持仓中
-    status = 0;
+    if (len(data) < 1): return
 
-    # 盘中持仓时间
-    intraday_holding_time = 0;
-
-    # 交易记录
-    records = []
+    stock_code = data[0]['stock_code']
 
     # 剩余资金
     balance = raw_funds
 
-    def buy(record: StockHistory, prevRecord: StockHistory):
-        nonlocal status
-        nonlocal balance
+    result: StockSimulatedTrading = {
+        'stock_code': stock_code,
+        # 状态：long-持仓 short-空仓
+        'status': 'short',
+        # 持仓数量
+        'holdings': 0,
+        # 初始资金
+        'raw_funds': raw_funds,
+        # 盘中持仓时间
+        'intraday_holding_time': 0,
+        # 记录
+        'records': []
+    }
 
-        macd = record['macd']
-        prevMacd = prevRecord['macd']
+    try:
+        for index, item in enumerate(data):
+            if index < 2: continue
 
-        if (not macd or not prevMacd):
-            return
+            prev = data[index - 1]
+            print(index)
+            opening = item['opening_price']
+            closing = item['closing_price']
+            date = item['date']
 
-        opening = record['opening_price']
-        closing = record['closing_price']
+            # 买入
+            if (result['status'] == 'short'):
+                # 单价
+                # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
+                price = format_float(closing + (closing - opening) * random.random())
 
-        # MACD 是否上升
-        isMacdUp = macd > prevMacd;
-
-        # 价格是否上升（跌涨辐大于 0）
-        isPriceUp = record['change_percent'] > 0
-
-        # 买入条件成立
-        isEstablish = isMacdUp and isPriceUp;
-
-        if (not isEstablish):
-            return;
-
-        # 单价
-        # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
-        price = format_float(closing + (closing - opening) * random.random())
-
-        # 买入股票数量（手）
-        _count = math.floor(balance / (price * 100));
-        if (_count <= 0):
-            return;
-
-        # 总金额
-        total = calculateBuyCost(_count * price * 100);
-
-        # 动态计算买入数量以及总额
-        while (total > balance):
-            _count -= 1;
-        total = calculateBuyCost(_count * price * 100);
-
-        # 持仓
-        holdings = _count * 100;
-
-        # 买入成本（每股）
-        _cost = format_float(total / holdings);
-
-        # 可用资金
-        available_funds = format_float(balance - holdings * _cost);
-        principal = balance
-        balance = available_funds
-
-        # 状态变更为持仓中
-        status = 1;
-
-        result = {
-            # 时间
-            'date': record['date'],
-
-            # 买入单价
-            'price': price,
-
-            # 买入成本
-            'cost': _cost,
-
-            # 买入数量
-            'holdings': holdings,
-
-            # 总金额
-            'total': total,
-
-            # 可用资金
-            'available_funds': available_funds,
-
-            # 本金
-            'principal': principal,
-
-            'raw': { **record },
-        }
-
-        return result;
-
-    def sell(records, record: StockHistory, prevRecord: StockHistory):
-        nonlocal status
-        nonlocal intraday_holding_time
-        nonlocal balance
-
-        stopLossRatio = -0.025
-
-        ''' 卖出
-        1. 动态亏损大于 3.5%
-        2. 涨跌幅下降 2.5%
-        3. MACD 小于等于上一日 MACD
-        '''
-        if (record['change_percent'] < stopLossRatio * 100):
-            buyData = records[-1]['buy']
-
-            buyTotal, holdings = buyData['total'], buyData['holdings']
-
-            prevClosing = prevRecord['closing_price']
-
-            # 单价
-            # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
-            price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
-
-            # 盘中持仓时间
-            intraday_holding_time += 1;
-
-            # 卖出总金额
-            total = calculateSellCost(price, holdings);
-
-            # 收益率
-            gain_ratio = format_float(((total - buyTotal) / buyTotal) * 100);
-
-            # 持仓时间
-            holding_time = calculateDays(buyData['date'], record['date']);
-
-            # 可用资金
-            available_funds = format_float(balance + total);
-
-            # 利润
-            profit = format_float(total - buyTotal);
-
-            # 重置本金
-            balance = available_funds
-
-            # 重置持仓时间
-            _intraday_holding_time = intraday_holding_time;
-            intraday_holding_time = 0;
-
-            status = 0
-
-            return {
-                # 时间
-                'date': record['date'],
-
-                # 卖出单价
-                'price': price,
-
-                # 卖出数量
-                'holdings': holdings,
+                # 买入股票数量（手）
+                _count = math.floor(balance / (price * 100));
+                # 买入股票数量（股）
+                _count2 = _count * 100
+                if (_count <= 0):
+                    return;
 
                 # 总金额
-                'total': total,
+                total = calculateBuyCost(_count * price * 100);
 
-                # 可用资金
-                'available_funds': available_funds,
+                # 动态计算买入数量以及总额
+                while (total > balance):
+                    _count -= 1;
+                total = calculateBuyCost(_count * price * 100);
 
-                # 利润
-                'profit': profit,
+                # 持仓
+                result['holdings'] = _count2
 
-                # 收益率
-                'gain_ratio': gain_ratio,
+                # 状态变为持仓
+                result['status'] = 'long'
+
+                result['records'].append({
+                    'type': 'buy',
+                    'date':  date,
+                    'price': price,
+                    'count': _count2,
+                    'total': total
+                })
+            else:
+                # 单价
+                # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
+                stopLossRatio = -0.025
+                prevClosing = prev['closing_price']
+                price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
 
                 # 盘中持仓时间
-                'intraday_holding_time': _intraday_holding_time,
+                result['intraday_holding_time'] += 1;
 
-                # 持仓时间
-                'holding_time': holding_time,
+                # 卖出总金额
+                total = calculateSellCost(price, result['holdings']);
 
-                'raw': { **record },
-            }
+                # 重置本金
+                balance = format_float(balance + total);
 
-    # 遍历 _list
-    for index, item in enumerate(data):
-        if (index < 2):
-            continue
+                # 状态变为持仓
+                result['status'] = 'short'
 
-        prevItem = data[index - 1]
-        if not prevItem:
-            continue
+                result['records'].append({
+                    'type': 'sell',
+                    'date':  date,
+                    'price': price,
+                    'count': result['holdings'],
+                    'total': total
+                })
+    except Exception as e:
+        print(e)
 
-        if (status == 0):
-            record = buy(item, prevItem)
-
-            if (record):
-                records.append({ 'buy': record })
-                continue
-
-        if (status == 1):
-            sellRecord = sell(records, item, prevItem)
-            if (not sellRecord):
-                continue
-
-            record = records[-1]
-            record['sell'] = sellRecord
-            continue
-
-
-    ''' 买入
-    - 从开始日期开始，每天筛选所有符合买入条件的股票
-    - 并从筛选出的股票中随机（暂定）选择一只股票买入
-    - 记录股票代码、股票名称、买入日期、单价、数量、佣金、过户费、总价、剩余资金
-    '''
-
-    ''' 卖出
-    - 每天计算所持有的股票是否符合卖出条件，如果符合卖出条件，则卖出
-    - 记录股票代码、股票名称、卖出日期、单价、数量、佣金、过户费、印花税、总收益（亏损）、所卖股票剩余持仓、剩余资金
-    - 卖出价格计算方式为：当天最高价和上一天收盘价的最高价*止损比率+止损比率*0.3
-    '''
-
-    ''' 结果
-    - 将所有的买入、卖出记录按日期排序
-    '''
-    return records
+    return result
 
 def trading_generator(dataList, raw_funds):
     for item in dataList:
