@@ -15,12 +15,7 @@ watch(
   () => list.value,
   async (val) => {
     const codes = val.map(item => item.stock_code)
-    const res = await getTradingTestStocks({
-      stocks: codes.slice(0, 5).join(","),
-      raw_funds: 10000,
-      start_date: '2023-01-01'
-    })
-    console.log(res)
+    console.log(`🚀 > file: list.vue:18 > codes:`, codes.join(','));
   }
 );
 const columns = ref([

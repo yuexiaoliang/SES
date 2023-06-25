@@ -1,6 +1,7 @@
 import datetime
 import math
 import random
+from joblib import Parallel, delayed
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
 from models.stock import StockHistory
@@ -257,11 +258,12 @@ def trading(data,  raw_funds: float = 10000):
 
     # 遍历 _list
     for index, item in enumerate(data):
-
         if (index < 2):
             continue
 
         prevItem = data[index - 1]
+        if not prevItem:
+            continue
 
         if (status == 0):
             record = buy(item, prevItem)
@@ -296,6 +298,12 @@ def trading(data,  raw_funds: float = 10000):
     - 将所有的买入、卖出记录按日期排序
     '''
     return records
+
+def trading_generator(dataList, raw_funds):
+    for item in dataList:
+        data = trading(item, raw_funds)
+        if len(data) > 0:
+            yield data
 
 
 @router.get('/single/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
@@ -337,8 +345,6 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
 
 @router.get('/stocks', name='多只股票模拟炒股测试', response_model=StocksTestResponse)
 def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
-    result = []
-
     historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 
     _codes = stocks.split(',')
@@ -377,10 +383,15 @@ def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: fl
     dataList = historyCollection.aggregate(pipeline)
     dataList = [convert_list_objectid_to_str(item['data']) for item in dataList]
 
-    for item in dataList:
+
+    def compute_task(item):
         data = trading(item, raw_funds)
-        if (len(data) > 0):
-            result.append(data)
+        if len(data) > 0:
+            return data
+
+    # 并行计算，提高计算速度
+    result = Parallel(n_jobs=-1)(delayed(compute_task)(item) for item in dataList)
+    result = [data for data in result if data is not None]
 
     return {
         'message': '获取成功',

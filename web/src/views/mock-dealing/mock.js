@@ -1,3 +1,6 @@
+export const codes =
+  "688700,832662,300258,300526";
+
 export default {
   raw_funds: 10000.0,
   records: [

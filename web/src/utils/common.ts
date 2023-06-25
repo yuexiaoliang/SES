@@ -29,3 +29,14 @@ export function formatPrice(price?: number, unit: string = "亿"): string {
 
   return result.toFixed(2);
 }
+
+export function chunkArray(str: string, len: number = 3) {
+  const arr = str.split(",");
+  const result: (string | number)[][] = [];
+
+  for (let i = 0; i < arr.length; i += len) {
+    result.push(arr.slice(i, i + len));
+  }
+
+  return result;
+}
