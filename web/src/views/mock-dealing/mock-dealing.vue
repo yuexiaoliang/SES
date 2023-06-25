@@ -89,8 +89,8 @@ const onRecordAnchorClick = (record: StockTestRecord) => {
 <style lang="scss" scoped>
 .mock-dealing {
   display: flex;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
 
   &__side {
     @extend .scrollbar;

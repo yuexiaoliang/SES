@@ -16,7 +16,7 @@ watch(
   async (val) => {
     const codes = val.map(item => item.stock_code)
     const res = await getTradingTestStocks({
-      stocks: codes,
+      stocks: codes.slice(0, 5).join(","),
       raw_funds: 10000,
       start_date: '2023-01-01'
     })
@@ -82,7 +82,7 @@ const onItemClick = (row: Stock, index: number) => {
 
 <style lang="scss" scoped>
 .mock-dealing-list {
-  padding: 0 10px 10px;
+  padding: 1px 10px 10px;
   height: 100%;
   box-sizing: border-box;
 

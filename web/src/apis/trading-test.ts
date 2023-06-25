@@ -142,11 +142,10 @@ export interface GetTradingTestStocksParams {
   end_date?: string;
   raw_funds?: number;
   start_date?: string;
-  stocks: string[];
+  stocks: string;
 }
 export function getTradingTestStocks(params: GetTradingTestStocksParams) {
-  const _params = { ...params, stocks: params.stocks.slice(0, 30).join(",") };
   return http.get<StockTestResponseData[]>(`/trading_test/stocks`, {
-    params: _params,
+    params
   });
 }
