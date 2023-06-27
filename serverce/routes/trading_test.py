@@ -1,12 +1,10 @@
 import datetime
 import math
 import random
-from typing import Any
 from joblib import Parallel, delayed
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends
-from models.stock import StockHistory
-from models.trading_test import StockTestResponse, StocksTestResponse, StockSimulatedTrading
+from models.trading_test import SingleStockResponse, MultiStocksResponse, StockSimulatedTrading
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
@@ -14,29 +12,29 @@ from constants.enums import DatabaseNames, DatabaseCollectionNames
 
 router = APIRouter()
 
-def calculateTransferFee(total: float):
+def calculate_transfer_fee(total: float):
     '''计算过户费'''
     return format_float(total * 0.00002)
 
 
-def calculateCommission(total: float):
+def calculate_commission(total: float):
     '''计算佣金'''
     commission = format_float(total * 0.0003)
     return commission if commission > 5 else 5
 
 
-def calculateBuyCost(total: float):
+def calculate_buy_cost(total: float):
     '''计算每股股票买入成本'''
     # 过户费
-    transferFee = calculateTransferFee(total)
+    transferFee = calculate_transfer_fee(total)
 
     # 佣金
-    commission = calculateCommission(total)
+    commission = calculate_commission(total)
 
     return format_float(transferFee + commission + total)
 
 
-def calculateSellCost(price: float, count: int):
+def calculate_sell_cost(price: float, count: int):
     '''计算卖出价格'''
     total = price * count
 
@@ -44,29 +42,20 @@ def calculateSellCost(price: float, count: int):
     stampDuty = total * 0.001
 
     # 过户费
-    transferFee = calculateTransferFee(total)
+    transferFee = calculate_transfer_fee(total)
 
     # 佣金
-    commission = calculateCommission(total)
+    commission = calculate_commission(total)
 
     return format_float(total - stampDuty - transferFee - commission)
 
 
-def calculateDays(start: str, end: str):
+def calculate_days(start: str, end: str):
     '''计算持仓时间'''
     start_date_obj = datetime.datetime.strptime(start, '%Y-%m-%d')
     end_date_obj = datetime.datetime.strptime(end, '%Y-%m-%d')
     delta = end_date_obj - start_date_obj
     return  delta.days
-
-
-def calculatePrice(item):
-    '''计算单价
-    模拟可能的买入、卖出价格
-    '''
-    opening = item['opening_price']
-    closing = item['closing_price']
-    return format_float(opening + (opening - closing) * random.random())
 
 
 def trading(data,  raw_funds: float = 10000):
@@ -82,13 +71,7 @@ def trading(data,  raw_funds: float = 10000):
 
     if (len(data) < 1): return
 
-    # 止损比例
-    stopLossRatio = -0.025
-
     stock_code = data[0]['stock_code']
-
-    # 剩余资金
-    balance = raw_funds
 
     result: StockSimulatedTrading = {
         'stock_code': stock_code,
@@ -98,96 +81,152 @@ def trading(data,  raw_funds: float = 10000):
         'holdings': 0,
         # 初始资金
         'raw_funds': raw_funds,
+        # 持仓时间
+        'holding_time': 0,
         # 盘中持仓时间
         'intraday_holding_time': 0,
         # 记录
-        'records': []
+        'records': [],
+        # 现有资金
+        'balance': raw_funds,
+        # 市值
+        'market_value': 0,
+        # 总资产
+        'total_funds': raw_funds
     }
 
-    try:
-        for index, item in enumerate(data):
-            if index < 2: continue
+    for index, item in enumerate(data):
+        if index < 2: continue
 
-            prev = data[index - 1]
+        prev = data[index - 1]
+        opening = item['opening_price']
+        closing = item['closing_price']
+        date = item['date']
+
+        # 买入
+        # 如果是空仓状态则进行买入操作
+        if (result['status'] == 'short'):
+            macd = item['macd']
+            prevMacd = prev['macd']
+
+            if (not macd or not prevMacd):
+                continue
+
             opening = item['opening_price']
             closing = item['closing_price']
-            date = item['date']
 
-            # 买入
-            if (result['status'] == 'short'):
-                # 单价
-                # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
-                price = format_float(closing + (closing - opening) * random.random())
+            # MACD 是否上升
+            isMacdUp = macd > prevMacd;
 
-                # 买入股票数量（手）
-                _count = math.floor(balance / (price * 100));
-                if (_count <= 0):
-                    continue;
+            # 价格是否上升（跌涨辐大于 0）
+            isPriceUp = prev['change_percent'] > 0
 
-                # 总金额
-                total = calculateBuyCost(_count * price * 100);
+            # 买入条件成立
+            isEstablish = isMacdUp and isPriceUp;
 
-                # 动态计算买入数量以及总额
-                while (total > balance):
-                    _count = _count - 1;
-                    total = calculateBuyCost(_count * price * 100);
+            if (not isEstablish):
+                continue;
 
-                # 买入股票数量（股）
-                _count2 = _count * 100
-                # 持仓
-                result['holdings'] = _count2
+            # 单价
+            # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
+            price = format_float(closing + (closing - opening) * random.random())
 
-                # 状态变为持仓
-                result['status'] = 'long'
+            # 买入股票数量（手）
+            _count = math.floor(result['balance'] / (price * 100));
+            if (_count <= 0):
+                continue;
 
-                balance = format_float(balance - total);
+            # 总金额
+            total = calculate_buy_cost(_count * price * 100);
 
-                result['records'].append({
-                    'type': 'buy',
-                    'date':  date,
-                    'price': price,
-                    'count': _count2,
-                    'total': total
-                })
-            else:
+            # 动态计算买入数量以及总额
+            while (total > result['balance']):
+                _count = _count - 1;
+                total = calculate_buy_cost(_count * price * 100);
 
-                # 单价
-                # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
-                prevClosing = prev['closing_price']
-                price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
+            # 买入股票数量（股）
+            _count2 = _count * 100
+            # 持仓
+            result['holdings'] = _count2
 
-                # 盘中持仓时间
-                result['intraday_holding_time'] += 1;
+            # 状态变为持仓
+            result['status'] = 'long'
 
-                # 卖出总金额
-                total = calculateSellCost(price, result['holdings']);
+            # 重置剩余资金
+            result['balance'] = format_float(result['balance'] - total);
 
-                # 重置本金
-                balance = format_float(balance + total);
+            # 买入当天则增加一天盘中持仓时间
+            result['intraday_holding_time'] += 1;
 
-                # 状态变为持仓
-                result['status'] = 'short'
+            result['records'].append({
+                'type': 'buy',
+                'date':  date,
+                'price': price,
+                'count': _count2,
+                'total': total,
+                'balance': result['balance']
+            })
+        else:
+            # 盘中持仓时间
+            # 只要是持仓状态则增加一天盘中持仓时间
+            result['intraday_holding_time'] += 1;
 
-                result['records'].append({
-                    'type': 'sell',
-                    'date':  date,
-                    'price': price,
-                    'count': result['holdings'],
-                    'total': total
-                })
-    except Exception as e:
-        print(e)
+            # 止损比例
+            stopLossRatio = -0.025
+
+            ''' 卖出
+            1. 动态亏损超过止损比率
+            '''
+
+            if item['change_percent'] > stopLossRatio * 100:
+                continue
+
+            # 单价
+            # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
+            prevClosing = prev['closing_price']
+            price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
+
+            # 卖出总金额
+            total = calculate_sell_cost(price, result['holdings']);
+
+            # 重置剩余资金
+            result['balance'] = format_float(result['balance'] + total);
+
+            # 状态变为空仓
+            result['status'] = 'short'
+
+            # 重置持仓数量
+            result['holdings'] = 0
+
+            result['records'].append({
+                'type': 'sell',
+                'date':  date,
+                'price': price,
+                'count': result['holdings'],
+                'total': total,
+                'balance': result['balance']
+            })
+
+        # 计算持仓时间
+        if (len(result['records']) > 1):
+            start = result['records'][0]['date']
+            end = result['records'][-1]['date']
+            result['holding_time'] = calculate_days(start, end)
+
+        # 计算市值
+        if (result['holdings'] == 0):
+            result['market_value'] = 0
+        else:
+            last = result['records'][-1]
+            result['market_value'] = format_float(last['total'])
+
+        # 计算总资产
+        result['total_funds'] = format_float(result['balance'] + result['market_value'])
 
     return result
 
-def trading_generator(dataList, raw_funds):
-    for item in dataList:
-        data = trading(item, raw_funds)
-        if len(data) > 0:
-            yield data
 
-
-@router.get('/single/{code}', name='单只股票模拟炒股测试', response_model=StockTestResponse)
+@router.get('/single/{code}', name='单只股票模拟炒股测试', response_model=SingleStockResponse)
 def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
 
     historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
@@ -217,14 +256,11 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
     return {
         'message': '获取成功',
         'code': 0,
-        'data': {
-            'records': trading(data, raw_funds),
-            'raw_funds': raw_funds
-        }
+        'data': trading(data, raw_funds)
     }
 
 
-@router.get('/stocks', name='多只股票模拟炒股测试', response_model=Any)
+@router.get('/multi', name='多只股票模拟炒股测试', response_model=MultiStocksResponse)
 def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
     historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 
@@ -277,8 +313,5 @@ def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: fl
     return {
         'message': '获取成功',
         'code': 0,
-        'data': {
-            'records': result,
-            'raw_funds': raw_funds
-        }
+        'data': result
     }
