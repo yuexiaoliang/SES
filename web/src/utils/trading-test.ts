@@ -1,23 +1,21 @@
 import { StockHistoryWithAny } from "@/apis/typings";
-import { StockTestRecord } from "@/apis/trading-test";
+import { StockSimulatedTradingRecord } from "@/apis/trading-test";
 
 export function addBSToData(
   data: StockHistoryWithAny[],
-  tradingData: StockTestRecord[]
+  tradingData: StockSimulatedTradingRecord[]
 ) {
   tradingData.forEach((record) => {
-    const { buy, sell } = record;
+    const { type, date } = record
 
-    if (buy) {
-      const { date } = buy;
+    if (type === 'buy') {
       const index = data.findIndex((item) => item.date === date);
-      data[index].buyRecord = buy;
+      data[index].buyRecord = record;
     }
 
-    if (sell) {
-      const { date } = sell;
+    if (type === 'sell') {
       const index = data.findIndex((item) => item.date === date);
-      data[index].sellRecord = sell;
+      data[index].sellRecord = record;
     }
   });
 

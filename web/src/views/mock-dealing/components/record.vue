@@ -1,87 +1,21 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { StockTestRecord } from "@/apis/trading-test";
-import { formatNumber } from "@/utils/formatter";
+import { ref } from "vue";
+import type {
+  StockSimulatedTrading,
+  StockSimulatedTradingRecord,
+} from "@/apis/trading-test";
 
 const emit = defineEmits<{
-  (e: "onRecordAnchorClick", record: StockTestRecord): void;
+  (e: "onRecordAnchorClick", record: StockSimulatedTradingRecord): void;
 }>();
 
-const props = defineProps<{
-  record: StockTestRecord[];
+defineProps<{
+  data: StockSimulatedTrading;
 }>();
-
-const tabs = ref(["全部", "盈利", "亏损"]);
-const currentTab = ref(tabs.value[0]);
-const onTabClick = (tab: string) => {
-  currentTab.value = tab;
-};
-
-const allRecord = computed(() => {
-  return props.record.filter((item) => item.sell);
-});
-
-const record = computed(() => {
-  return allRecord.value.filter((item) => {
-    if (currentTab.value === "盈利") {
-      return item.sell!.profit > 0;
-    }
-
-    if (currentTab.value === "亏损") {
-      return item.sell!.profit < 0;
-    }
-
-    return true;
-  });
-});
-
-const overview = computed(() => {
-  // 总次数
-  const count = allRecord.value.length;
-
-  // 盈利次数
-  const profitCount = allRecord.value.filter(
-    (item) => item.sell!.profit > 0
-  ).length;
-
-  // 亏损次数
-  const lossCount = allRecord.value.filter(
-    (item) => item.sell && item.sell.profit < 0
-  ).length;
-
-  // 总盈利
-  const totalProfitAmount = formatNumber(
-    allRecord.value
-      .filter((item) => item.sell)
-      .reduce((prev, curr) => {
-        return prev + curr.sell!.profit;
-      }, 0),
-    0
-  );
-
-  // 总持仓时间
-  const totalHoldingTime = allRecord.value.reduce((prev, curr) => {
-    return prev + curr.sell!.holding_time;
-  }, 0);
-
-  // 盘中总持仓时间
-  const totalIntradayHoldingTime = allRecord.value.reduce((prev, curr) => {
-    return prev + curr.sell!.intraday_holding_time;
-  }, 0);
-
-  return {
-    count,
-    profitCount,
-    lossCount,
-    totalProfitAmount,
-    totalHoldingTime,
-    totalIntradayHoldingTime,
-  };
-});
 
 const currentIndex = ref<number | null>(null);
 
-const onItemClick = (item: StockTestRecord, index: number) => {
+const onItemClick = (item: StockSimulatedTradingRecord, index: number) => {
   currentIndex.value = index;
   emit("onRecordAnchorClick", item);
 };
@@ -92,70 +26,45 @@ const onItemClick = (item: StockTestRecord, index: number) => {
     <header class="overview">
       <p>
         <span
-          >总<b>{{ overview.count }}</b></span
+          >总<b>{{ data.total_funds }}</b></span
         >
         |
         <span
-          >盈<b> {{ overview.profitCount }}</b></span
+          >剩<b>{{ data.balance }}</b></span
         >
         |
         <span
-          >亏<b>{{ overview.lossCount }}</b></span
+          >持<b> {{ data.intraday_holding_time }}</b></span
         >
         |
         <span
-          >利<b>{{ overview.totalProfitAmount }} </b></span
+          >量<b>{{ data.holdings }}</b></span
         >
-      </p>
-
-      <p>
-        总持<b>{{ overview.totalHoldingTime }}</b
-        >天 | 盘持<b>{{ overview.totalIntradayHoldingTime }}</b
-        >天
+        |
+        <span
+          >市<b> {{ data.market_value }}</b></span
+        >
       </p>
     </header>
 
     <div class="record">
-      <div class="record__tab">
-        <span
-          class="record__tab-item"
-          :class="{ 'record__tab-item--active': currentTab === item }"
-          v-for="item in tabs"
-          :key="item"
-          @click="onTabClick(item)"
-          >{{ item }}</span
-        >
-      </div>
-
       <ul class="record__list">
         <li
-          v-for="(item, index) in record"
+          v-for="(item, index) in data.records"
           class="record__list__item"
           :class="{
             'record__list__item--active': currentIndex === index,
-            'record__list__item--is-loss':
-              item.sell?.profit && item.sell.profit < 0,
           }"
         >
           <el-icon class="anchor el-icon-view" @click="onItemClick(item, index)"
             ><View
           /></el-icon>
-          <p>买入时间：{{ item.buy.date }}</p>
-          <p>买入单价：{{ item.buy.price }}</p>
-          <p>买入数量：{{ item.buy.holdings }} 股</p>
-          <p>买入总金额：{{ item.buy.total }}</p>
-          <p>买入后剩余资金：{{ item.buy.available_funds }}</p>
-
-          <template v-if="item.sell">
-            <p>卖出时间：{{ item.sell.date }}</p>
-            <p>卖出单价：{{ item.sell.price }}</p>
-            <p>卖出数量：{{ item.sell.holdings }} 股</p>
-            <p>卖出总金额：{{ item.sell.total }}</p>
-            <p>卖出后剩余资金：{{ item.sell.available_funds }}</p>
-            <p>持仓天数：{{ item.sell.holding_time }} 天</p>
-            <p>收益率：{{ item.sell.gain_ratio }} %</p>
-            <p>利润：{{ item.sell.profit }}</p>
-          </template>
+          <p>类型：{{ item.type }}</p>
+          <p>时间：{{ item.date }}</p>
+          <p>单价：{{ item.price }}</p>
+          <p>数量：{{ item.count }} 股</p>
+          <p>总金额：{{ item.total }}</p>
+          <p>剩余资金：{{ item.balance }}</p>
         </li>
       </ul>
     </div>
@@ -186,22 +95,6 @@ const onItemClick = (item: StockTestRecord, index: number) => {
     flex-direction: column;
     overflow: hidden;
 
-    &__tab {
-      display: flex;
-      border-bottom: 1px dashed var(--border-color);
-
-      &-item {
-        @include flex-center();
-        flex: 1;
-        height: 30px;
-        cursor: pointer;
-
-        &--active {
-          color: yellow;
-        }
-      }
-    }
-
     &__list {
       @extend .scrollbar;
       flex: 1;
@@ -227,13 +120,6 @@ const onItemClick = (item: StockTestRecord, index: number) => {
           width: 8px;
           height: 8px;
           border-radius: 4px;
-        }
-
-        &--is-loss {
-          &::after {
-            background-color: red;
-            box-shadow: 0 0 8px 3px red;
-          }
         }
 
         .anchor {

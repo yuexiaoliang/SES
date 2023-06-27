@@ -24,7 +24,6 @@ class StockSimulatedTrading(BaseModel):
     raw_funds: float = Field(..., title='初始资金')
     market_value: float = Field(..., title='市值')
     total_funds: float = Field(..., title='总资产')
-    holding_time: int = Field(..., title='持仓时间')
     intraday_holding_time: int = Field(..., title='盘中持仓时间')
     records: List[StockSimulatedTradingRecord] = Field(..., title='交易记录')
 
@@ -34,6 +33,14 @@ class SingleStockResponse(ResponseBaseModel):
 
     # data: StocksTestResponseData = Field(..., title='返回的数据')
     data: StockSimulatedTrading = Field(..., title='返回的数据')
+
+
+class MultiStocksRequest(BaseModel):
+    codes: List[str] = Field(..., title='股票代码列表')
+    start_date: str = Field(None, title='开始日期')
+    end_date: str = Field(None, title='结束日期')
+    raw_funds: float = Field(..., title='初始资金')
+
 
 class MultiStocksResponse(ResponseBaseModel):
     class config:

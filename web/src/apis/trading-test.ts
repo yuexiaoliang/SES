@@ -1,109 +1,63 @@
 import http from "@/utils/http";
-import { StockHistory } from "./typings";
 
-// 单只股票模拟炒股测试
-// 请求参数
-export interface GetTradingTestRequestParams {
-  end_date?: string;
-  raw_funds?: number;
-  start_date?: string;
+/**
+ * 交易类型
+ */
+export enum Type {
+  Buy = "buy",
+  Sell = "sell",
+}
+
+/**
+ * 状态：long-持仓 short-空仓
+ */
+export enum Status {
+  Long = "long",
+  Short = "short",
+}
+
+/**
+ * StockSimulatedTradingRecord
+ */
+export interface StockSimulatedTradingRecord {
+  /**
+   * 剩余资金
+   */
+  balance: number;
+  /**
+   * 数量
+   */
+  count: number;
+  /**
+   * 时间
+   */
+  date: string;
+  /**
+   * 单价
+   */
+  price: number;
+  /**
+   * 总金额
+   */
+  total: number;
+  /**
+   * 交易类型
+   */
+  type: Type;
 }
 
 /**
  * 返回的数据
  *
- * StockTestResponseData
+ * StockSimulatedTrading
  */
-export interface StockTestResponseData {
+export interface StockSimulatedTrading {
   /**
-   * 初始资金
+   * 剩余资金
    */
-  raw_funds: number;
+  balance: number;
   /**
-   * 交易记录
-   */
-  records: StockTestRecord[];
-}
-
-/**
- * StockTestRecord
- */
-export interface StockTestRecord {
-  /**
-   * 买入记录
-   */
-  buy: Buy;
-  /**
-   * 卖出记录
-   */
-  sell?: Sell;
-}
-
-/**
- * 买入记录
- *
- * StockTestBuyRecord
- */
-export interface Buy {
-  /**
-   * 可用资金
-   */
-  available_funds: number;
-  /**
-   * 买入成本
-   */
-  cost: number;
-  /**
-   * 时间
-   */
-  date: string;
-  /**
-   * 买入数量
-   */
-  holdings: number;
-  /**
-   * 买入单价
-   */
-  price: number;
-  /**
-   * 本金
-   */
-  principal: number;
-  /**
-   * 总金额
-   */
-  total: number;
-
-  /**
-   * 当天交易数据
-   */
-  raw: StockHistory;
-}
-
-/**
- * 卖出记录
- *
- * StockTestSellRecord
- */
-export interface Sell {
-  /**
-   * 可用资金
-   */
-  available_funds: number;
-  /**
-   * 时间
-   */
-  date: string;
-  /**
-   * 收益率
-   */
-  gain_ratio: number;
-  /**
-   * 持仓时间
-   */
-  holding_time: number;
-  /**
-   * 卖出数量
+   * 持仓数量
    */
   holdings: number;
   /**
@@ -111,41 +65,63 @@ export interface Sell {
    */
   intraday_holding_time: number;
   /**
-   * 卖出单价
+   * 市值
    */
-  price: number;
+  market_value: number;
   /**
-   * 利润
+   * 初始资金
    */
-  profit: number;
+  raw_funds: number;
   /**
-   * 总金额
+   * 交易记录
    */
-  total: number;
-
+  records: StockSimulatedTradingRecord[];
   /**
-   * 当天交易数据
+   * 状态：long-持仓 short-空仓
    */
-  raw: StockHistory;
+  status: Status;
+  /**
+   * 股票代码
+   */
+  stock_code: string;
+  /**
+   * 总资产
+   */
+  total_funds: number;
 }
 
-export function getTradingTest(
-  code: string,
-  params: GetTradingTestRequestParams
-) {
-  return http.get<StockTestResponseData>(`/trading_test/single/${code}`, {
-    params,
-  });
-}
-
-export interface GetTradingTestStocksParams {
+export interface GetTradingTestSingleRequest {
   end_date?: string;
   raw_funds?: number;
   start_date?: string;
-  stocks: string;
 }
-export function getTradingTestStocks(params: GetTradingTestStocksParams) {
-  return http.get<StockTestResponseData[]>(`/trading_test/stocks`, {
-    params
-  });
+
+export interface GetTradingTestMultiRequest {
+  /**
+   * 股票代码列表
+   */
+  codes: string[];
+  /**
+   * 结束日期
+   */
+  end_date?: string;
+  /**
+   * 初始资金
+   */
+  raw_funds: number;
+  /**
+   * 开始日期
+   */
+  start_date?: string;
 }
+
+// 单只股票模拟炒股测试
+export const getTradingTestSingle = (
+  code: string,
+  params: GetTradingTestSingleRequest
+) =>
+  http.get<StockSimulatedTrading>(`/trading_test/single/${code}`, { params });
+
+// 多只股票模拟炒股测试
+export const getTradingTestMulti = (data: GetTradingTestMultiRequest) =>
+  http.post<StockSimulatedTrading[]>("/trading_test/multi", data);

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getTradingTestStocks } from "@/apis/trading-test";
+import { getTradingTestMulti } from "@/apis/trading-test";
 
 import data, { codes } from "./mock.js";
 import { chunkArray } from "@/utils/common";
@@ -13,10 +13,10 @@ import { chunkArray } from "@/utils/common";
 const result = [];
 const codesList = chunkArray(codes, 3);
 
-getTradingTestStocks({
+getTradingTestMulti({
   raw_funds: 10000,
   start_date: "2022-01-01",
-  stocks: codes,
+  codes: codes.split(","),
 })
   .then((res) => {
     console.log(

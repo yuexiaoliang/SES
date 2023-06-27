@@ -3,7 +3,6 @@ import { ref, watch } from "vue";
 import { formatPrice } from "@/utils/common";
 import { useStockList } from "@/hooks/stock";
 import { Stock } from "@/apis/typings";
-import { getTradingTestStocks } from '@/apis/trading-test';
 
 const emit = defineEmits<{
   (e: "onStockClick", stock: Stock): void;

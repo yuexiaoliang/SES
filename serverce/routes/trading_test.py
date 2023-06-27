@@ -3,8 +3,8 @@ import math
 import random
 from joblib import Parallel, delayed
 from pymongo import MongoClient
-from fastapi import APIRouter, Depends
-from models.trading_test import SingleStockResponse, MultiStocksResponse, StockSimulatedTrading
+from fastapi import APIRouter, Depends, Body
+from models.trading_test import SingleStockResponse, MultiStocksResponse, StockSimulatedTrading, MultiStocksRequest
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
@@ -81,8 +81,6 @@ def trading(data,  raw_funds: float = 10000):
         'holdings': 0,
         # 初始资金
         'raw_funds': raw_funds,
-        # 持仓时间
-        'holding_time': 0,
         # 盘中持仓时间
         'intraday_holding_time': 0,
         # 记录
@@ -195,9 +193,6 @@ def trading(data,  raw_funds: float = 10000):
             # 状态变为空仓
             result['status'] = 'short'
 
-            # 重置持仓数量
-            result['holdings'] = 0
-
             result['records'].append({
                 'type': 'sell',
                 'date':  date,
@@ -207,11 +202,13 @@ def trading(data,  raw_funds: float = 10000):
                 'balance': result['balance']
             })
 
+            # 重置持仓数量
+            result['holdings'] = 0
+
         # 计算持仓时间
         if (len(result['records']) > 1):
             start = result['records'][0]['date']
             end = result['records'][-1]['date']
-            result['holding_time'] = calculate_days(start, end)
 
         # 计算市值
         if (result['holdings'] == 0):
@@ -260,14 +257,16 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
     }
 
 
-@router.get('/multi', name='多只股票模拟炒股测试', response_model=MultiStocksResponse)
-def multi_stocks(stocks , start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+@router.post('/multi', name='多只股票模拟炒股测试', response_model=MultiStocksResponse)
+def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = Depends(get_mongo_client)):
+    body = request.dict()
+
+    codes, start_date, end_date, raw_funds = body['codes'], body['start_date'], body['end_date'], body['raw_funds']
+
     historyCollection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
 
-    _codes = stocks.split(',')
-
     query = {
-        'stock_code': { '$in': _codes }
+        'stock_code': { '$in': codes }
     }
 
     if (start_date or end_date):

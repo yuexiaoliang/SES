@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { getStockDailyData } from "@/apis/stock";
-import { getTradingTest } from "@/apis/trading-test";
-import type { StockTestRecord } from "@/apis/trading-test";
+import { getTradingTestSingle } from "@/apis/trading-test";
+import type { StockSimulatedTrading, StockSimulatedTradingRecord } from "@/apis/trading-test";
 import { Stock, StockHistory } from "@/apis/typings";
 import { addBSToData } from "@/utils/trading-test";
 import StockCandlestick from "@/components/stock-candlestick/stock-candlestick.vue";
@@ -13,7 +13,7 @@ import Record from "./components/record.vue";
 const chartData = ref<StockHistory[]>([]);
 
 const load = async (stock: Stock) => {
-  const { data: testData } = await getTradingTest(stock.stock_code, {
+  const { data: testData } = await getTradingTestSingle(stock.stock_code, {
     start_date: "2023-01-01",
     raw_funds: 10000,
   });
@@ -23,7 +23,7 @@ const load = async (stock: Stock) => {
   });
 
   chartData.value = addBSToData(data, testData.records);
-  records.value = testData.records;
+  records.value = testData;
 };
 
 const onListFirstLoaded = (stocks: Stock[]) => {
@@ -31,29 +31,22 @@ const onListFirstLoaded = (stocks: Stock[]) => {
   load(firstStock);
 };
 
-const records = ref<StockTestRecord[]>([]);
+const records = ref<StockSimulatedTrading>();
 
 const onStockClick = (stock: Stock) => {
   load(stock);
 };
 
 const candlestickChart = ref();
-const onRecordAnchorClick = (record: StockTestRecord) => {
-  const buyDate = record.buy.date;
-  const sellDate = record.sell?.date;
+const onRecordAnchorClick = (record: StockSimulatedTradingRecord) => {
+  const date = record.date;
 
-  const startIndex = chartData.value.findIndex(
-    (dataItem) => dataItem.date === buyDate
+  const index = chartData.value.findIndex(
+    (dataItem) => dataItem.date === date
   );
 
-  const endIndex = chartData.value.findIndex((dataItem) => {
-    if (!sellDate) return;
-
-    return dataItem.date === sellDate;
-  });
-
-  const startValue = startIndex - 20;
-  const endValue = endIndex > -1 ? endIndex + 20 : startIndex + 20;
+  const startValue = index - 20;
+  const endValue = index > -1 ? index + 20 : index + 20;
 
   candlestickChart.value.setDataZoom(startValue, endValue);
 };
@@ -79,7 +72,7 @@ const onRecordAnchorClick = (record: StockTestRecord) => {
 
     <aside class="mock-dealing__side mock-dealing__side--right">
       <Record
-        :record="records"
+        :data="records"
         @onRecordAnchorClick="onRecordAnchorClick"
       ></Record>
     </aside>
