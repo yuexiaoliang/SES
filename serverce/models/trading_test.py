@@ -36,7 +36,7 @@ class SingleStockResponse(ResponseBaseModel):
 
 
 class MultiStocksRequest(BaseModel):
-    codes: List[str] = Field(..., title='股票代码列表')
+    codes: List[str] = Field(None, title='股票代码列表')
     start_date: str = Field(None, title='开始日期')
     end_date: str = Field(None, title='结束日期')
     raw_funds: float = Field(..., title='初始资金')
@@ -62,4 +62,5 @@ class MultiHybridStocksResponse(ResponseBaseModel):
     class config:
         title = "多只股票混合交易测试 Response"
 
-    data: MultiHybridStockTrading
+    # data: MultiHybridStockTrading
+    data: Any

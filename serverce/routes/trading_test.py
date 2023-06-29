@@ -313,19 +313,15 @@ def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = 
     }
 
 
-@router.get('/all', name='多只股票混合模拟交易测试', response_model=MultiHybridStocksResponse)
-def multi_stocks(start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+@router.post('/multi-hybrid', name='多只股票混合模拟交易测试', response_model=MultiHybridStocksResponse)
+def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = Depends(get_mongo_client)):
     ''' 从 start_date 开始，到 end_date 结束，每天都进行一次模拟炒股。
     如果是空仓状态，则剔除当天不符合条件的股票，然后进行买入，如果没有合适的股票，则进入下一天。
     如果是持仓状态，则判断是否需要卖出，不需要则进入下一天。
 
     一、如果用户没有指定股票代码，则获取所有股票代码
-    stock_collection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
-    codes = [item['stock_code'] for item in stock_collection.find()]
 
     二、获取 start_date 到 end_date 之间的所有交易日
-    dates = get_trade_dates(client)
-    print(dates)
 
     三、交易日循环
 
@@ -342,7 +338,29 @@ def multi_stocks(start_date:str = '', end_date: str = '', raw_funds: float = 100
     - 较前一日的 rsi6 小于 10
     '''
 
+    body = request.dict()
 
+    codes, start_date, end_date, raw_funds = body['codes'], body['start_date'], body['end_date'], body['raw_funds']
+
+    if (not codes):
+        stock_collection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
+        codes = [item['stock_code'] for item in stock_collection.find()]
+
+    # 所有交易日
+    date_list = get_trade_dates(client)
+    date_list = date_list['data']
+
+    # 如果没有开始时间，则选择最小的时间作为开始时间
+    if not start_date:
+        start_date = min(date_list)
+
+    # 如果没有结束时间，则选择最大的时间作为结束时间
+    if not end_date:
+        end_date = max(date_list)
+
+    # 选择开始时间到结束时间中间的所有时间
+    selected_times = [time for time in date_list if start_date <= time <= end_date]
+    sorted(selected_times, key=lambda x: x)
 
     # -------------------------
 
