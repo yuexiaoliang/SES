@@ -1,14 +1,16 @@
 import datetime
 import math
 import random
+from typing import Any
 from joblib import Parallel, delayed
 from pymongo import MongoClient
 from fastapi import APIRouter, Depends, Body
-from models.trading_test import SingleStockResponse, MultiStocksResponse, StockSimulatedTrading, MultiStocksRequest
+from models.trading_test import SingleStockResponse, MultiStocksResponse, StockSimulatedTrading, MultiStocksRequest, MultiHybridStocksResponse
 from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
 from constants.enums import DatabaseNames, DatabaseCollectionNames
+from .stock import get_trade_dates
 
 router = APIRouter()
 
@@ -252,7 +254,7 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
     }
 
 
-@router.post('/multi', name='多只股票模拟炒股测试', response_model=MultiStocksResponse)
+@router.post('/multi', name='多只股票模拟交易测试', response_model=MultiStocksResponse)
 def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = Depends(get_mongo_client)):
     body = request.dict()
 
@@ -308,4 +310,90 @@ def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = 
         'message': '获取成功',
         'code': 0,
         'data': result
+    }
+
+
+@router.get('/all', name='多只股票混合模拟交易测试', response_model=MultiHybridStocksResponse)
+def multi_stocks(start_date:str = '', end_date: str = '', raw_funds: float = 10000, client: MongoClient = Depends(get_mongo_client)):
+    ''' 从 start_date 开始，到 end_date 结束，每天都进行一次模拟炒股。
+    如果是空仓状态，则剔除当天不符合条件的股票，然后进行买入，如果没有合适的股票，则进入下一天。
+    如果是持仓状态，则判断是否需要卖出，不需要则进入下一天。
+
+    一、如果用户没有指定股票代码，则获取所有股票代码
+    stock_collection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS.value]
+    codes = [item['stock_code'] for item in stock_collection.find()]
+
+    二、获取 start_date 到 end_date 之间的所有交易日
+    dates = get_trade_dates(client)
+    print(dates)
+
+    三、交易日循环
+
+    3.1 如果是持仓状态，则判断是否需要卖出，不需要则进入下一天。
+
+    3.2 如果是空仓状态，则剔除当天不符合条件的股票，然后进行买入，如果没有合适的股票，则进入下一天。
+
+    3.2.1 获取在 codes 中的股票数据
+
+    3.2.2 判断基本买入条件，并买入
+
+    - 较前一日跌涨幅（change_percent）大于 2%
+    - 较前一日 macd 大于前两日 macd
+    - 较前一日的 rsi6 小于 10
+    '''
+
+
+
+    # -------------------------
+
+    # history_collection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]
+
+    # query = {
+    #     'stock_code': { '$in': codes }
+    # }
+
+    # if (start_date or end_date):
+    #     query['date'] = {}
+
+    # if (start_date):
+    #     query['date']['$gte'] = start_date
+
+    # if (end_date):
+    #     query['date']['$lt'] = end_date
+
+    # pipeline = [
+    #     {
+    #         "$match": query
+    #     },
+    #     {
+    #         '$group': {
+    #             '_id': '$stock_code',  # 以 stock_code 作为分组依据
+    #             'data': {'$push': '$$ROOT'}  # 将每个分组的文档保存到一个数组中
+    #         }
+    #     },
+    #     {
+    #         '$project': {
+    #             '_id': 0,
+    #             'data': 1
+    #         }
+    #     }
+    # ]
+
+    # dataList = history_collection.aggregate(pipeline)
+    # dataList = [convert_list_objectid_to_str(item['data']) for item in dataList]
+
+
+    # def compute_task(item):
+    #     data = trading(item, raw_funds)
+    #     if len(data) > 0:
+    #         return data
+
+    # # 并行计算，提高计算速度
+    # result = Parallel(n_jobs=-1)(delayed(compute_task)(item) for item in dataList)
+    # result = [data for data in result if data is not None]
+
+    return {
+        'message': '获取成功',
+        'code': 0,
+        'data': []
     }

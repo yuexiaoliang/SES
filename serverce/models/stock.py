@@ -71,6 +71,9 @@ class StockHistory(StockBaseModel):
     ma10: float = Field(None, title='MA10')
     ma20: float = Field(None, title='MA20')
     ma30: float = Field(None, title='MA30')
+    rsi6: float = Field(None, title='RSI6')
+    rsi12: float = Field(None, title='RSI12')
+    rsi24: float = Field(None, title='RSI24')
 
 
 class StockHistoryResponse(ResponseBaseModel):
@@ -107,3 +110,10 @@ class ReportDatesResponse(ResponseBaseModel):
         title = "股票财报日期"
 
     data: List[ReportDate]
+
+
+class TradeDatesResponse(ResponseBaseModel):
+    class config:
+        title = "所有交易日"
+
+    data: List[str]
