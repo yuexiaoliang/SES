@@ -7,7 +7,7 @@ export const useStockList = (emit: any) => {
 
   const form = ref({
     page_current: 1,
-    page_size: 6000
+    page_size: 100
   });
 
   const list = ref<Stock[]>([]);

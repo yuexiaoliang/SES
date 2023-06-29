@@ -205,11 +205,6 @@ def trading(data,  raw_funds: float = 10000):
             # 重置持仓数量
             result['holdings'] = 0
 
-        # 计算持仓时间
-        if (len(result['records']) > 1):
-            start = result['records'][0]['date']
-            end = result['records'][-1]['date']
-
         # 计算市值
         if (result['holdings'] == 0):
             result['market_value'] = 0

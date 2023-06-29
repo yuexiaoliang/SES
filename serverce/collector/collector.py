@@ -8,6 +8,8 @@ import ta
 
 from constants.enums import DatabaseCollectionNames, DatabaseNames
 
+from database.index_maintenance import create_index
+
 from utils.logger import Logger
 from utils.format import clean_data_list
 from utils.transform import transform_data
@@ -106,6 +108,13 @@ def collect_realtime_stocks():
     - `list`: 所有 A 股股票代码
     """
 
+
+    # 科创板和创业板的股票代码都是不需要采集的
+    # 这里先获取科创板和创业板的股票代码，之后用来剔除
+    no_df = ef.stock.get_realtime_quotes(['科创板', '创业板'])
+    no_data = transform_data(no_df.to_dict('records'))
+    no_codes = [item['stock_code'] for item in no_data]
+
     # 采集的数据
     df = ef.stock.get_realtime_quotes()
 
@@ -123,8 +132,14 @@ def collect_realtime_stocks():
         # 先清空数据库集合中的所有数据
         collection.drop()
 
+        # 清洗数据
+        data = clean_data_list(transform_data(data))
+
+        # 剔除不需要采集的数据
+        data = [item for item in data if item['stock_code'] not in no_codes]
+
         # 把数据插入到数据库中
-        collection.insert_many(clean_data_list(transform_data(data)))
+        collection.insert_many(data)
 
         # 更新采集时间
         update_collected_time(DatabaseCollectionNames.STOCKS.value)
@@ -215,7 +230,6 @@ def collect_stocks_history(stock_codes=None):
             logger.error(f"【{code}】该股票采集 A 股日线数据为空，已跳过")
             continue
 
-
         try:
             # DataFrame 转换为字典
             data = value.to_dict("records")
@@ -236,6 +250,12 @@ def collect_stocks_history(stock_codes=None):
             df['ma10'] = ta.trend.sma_indicator(df['closing_price'], window=10)
             df['ma20'] = ta.trend.sma_indicator(df['closing_price'], window=20)
             df['ma30'] = ta.trend.sma_indicator(df['closing_price'], window=30)
+
+            # 计算RSI
+            df['rsi6'] = ta.momentum.rsi(df['closing_price'], window=6)
+            df['rsi12'] = ta.momentum.rsi(df['closing_price'], window=12)
+            df['rsi24'] = ta.momentum.rsi(df['closing_price'], window=24)
+
 
             df = df.round(2)
 
@@ -267,6 +287,12 @@ def collect_stocks_history(stock_codes=None):
     print('采集 A 股日线数据完成！')
     client.close()
 
+# get_belong_board
+def collect_belongs_board(stock_codes=None):
+    df = ef.stock.get_belong_board(stock_codes)
+    print(df)
+
+
 
 def all():
     # 采集 A 股所有报告期
@@ -279,3 +305,6 @@ def all():
     collect_stocks()
     # 采集 A 股日线数据
     collect_stocks_history()
+
+    # 创建索引
+    create_index()
