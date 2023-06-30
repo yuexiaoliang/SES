@@ -10,7 +10,10 @@ from utils.format import convert_list_objectid_to_str
 from utils.database import get_mongo_client
 from utils.format import format_float
 from constants.enums import DatabaseNames, DatabaseCollectionNames
-from .stock import get_trade_dates
+from .stock import get_trade_dates, get_daily_data
+
+# 止损比例
+stopLossRatio = -0.025
 
 router = APIRouter()
 
@@ -109,20 +112,27 @@ def trading(data,  raw_funds: float = 10000):
             macd = item['macd']
             prevMacd = prev['macd']
 
-            if (not macd or not prevMacd):
-                continue
+            # if (not macd or not prevMacd):
+            #     continue
 
-            opening = item['opening_price']
-            closing = item['closing_price']
+            rsi6 = item['rsi6']
+            prevRsi6 = prev['rsi6']
+
+            # RSI 是否上升
+            # isRsiUp = rsi6 > prevRsi6;
+            isRsiUp = True
 
             # MACD 是否上升
-            isMacdUp = macd > prevMacd;
+            # isMacdUp = macd > prevMacd;
+            isMacdUp = True
 
-            # 价格是否上升（跌涨辐大于 0）
-            isPriceUp = prev['change_percent'] > 0
+
+            # 价格是否上升（跌涨辐大于 2）
+            # isPriceUp = prev['change_percent'] > 0
+            isPriceUp = True
 
             # 买入条件成立
-            isEstablish = isMacdUp and isPriceUp;
+            isEstablish = isMacdUp and isPriceUp and isRsiUp
 
             if (not isEstablish):
                 continue;
@@ -171,13 +181,10 @@ def trading(data,  raw_funds: float = 10000):
             # 只要是持仓状态则增加一天盘中持仓时间
             result['intraday_holding_time'] += 1;
 
-            # 止损比例
-            stopLossRatio = -0.025
 
             ''' 卖出
             1. 动态亏损超过止损比率
             '''
-
             if item['change_percent'] > stopLossRatio * 100:
                 continue
 
@@ -325,9 +332,9 @@ def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = 
 
     三、交易日循环
 
-    3.1 如果是持仓状态，则判断是否需要卖出，不需要则进入下一天。
+    3.1 如果是持仓状态，则判断持仓股票是否有需要卖出的，有则卖出，没有则进入下一步。
 
-    3.2 如果是空仓状态，则剔除当天不符合条件的股票，然后进行买入，如果没有合适的股票，则进入下一天。
+    3.2 不管是空仓还是持仓状态，如果手中可用资金超过 2000 元则准备交易。首先剔除当天不符合买入条件的股票，然后对符合条件的股票进行随机买入，如果没有合适的股票，则进入下一天（下一个循环）。
 
     3.2.1 获取在 codes 中的股票数据
 
@@ -347,20 +354,226 @@ def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = 
         codes = [item['stock_code'] for item in stock_collection.find()]
 
     # 所有交易日
-    date_list = get_trade_dates(client)
-    date_list = date_list['data']
+    trade_dates = get_trade_dates(client)
+    trade_dates = sorted(trade_dates['data'], key=lambda x: x)
 
     # 如果没有开始时间，则选择最小的时间作为开始时间
     if not start_date:
-        start_date = min(date_list)
+        start_date = min(trade_dates)
 
     # 如果没有结束时间，则选择最大的时间作为结束时间
     if not end_date:
-        end_date = max(date_list)
+        end_date = max(trade_dates)
 
     # 选择开始时间到结束时间中间的所有时间
-    selected_times = [time for time in date_list if start_date <= time <= end_date]
-    sorted(selected_times, key=lambda x: x)
+    date_list = [time for time in trade_dates if start_date <= time <= end_date]
+    date_list = sorted(date_list, key=lambda x: x)
+
+    result = {
+        'holdings_stocks': [],
+        'status': 'long',
+        'market_value': 0,
+        'raw_funds': raw_funds,
+        'balance': raw_funds,
+        'total_funds': raw_funds,
+        'records': {}
+    }
+
+    for date in date_list:
+        date_index = trade_dates.index(date)
+        # 计算 start_date
+        _start_date = trade_dates[date_index - 5]
+        # 计算 end_date
+        _end_date = date
+
+
+        # 如果是持仓状态，则判断持仓股票是否有需要卖出的，有则卖出，没有则进入下一步。
+        if (result['status'] == 'long'):
+            # 临时保存没有卖空的股票，循环完成后，再赋值给 result['holdings_stocks']
+            holdings_stocks = []
+
+            for stock in result['holdings_stocks']:
+                # 获取股票历史数据
+                history = get_daily_data(stock['stock_code'], start_date=_start_date, end_date=_end_date, client=client)
+                history = history['data']
+
+                # 获取当前股票的索引
+                record_index = [index for index, item in enumerate(history) if item['date'] == date]
+                if not record_index:
+                    continue
+                record_index = record_index[0]
+                history_record = history[record_index]
+                prev_history_record = history[record_index - 1]
+
+                # 如果不符合卖出条件，则进入下一个循环
+                if history_record['change_percent'] > stopLossRatio * 100:
+                    holdings_stocks.append(stock)
+                    continue
+
+                # 单价
+                # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
+                prevClosing = prev_history_record['closing_price']
+                price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
+
+                # 卖出数量
+                sell_count = stock['holdings']
+                # 重置持仓数量
+                stock['holdings'] = stock['holdings'] - sell_count
+                # 卖出总金额
+                total = calculate_sell_cost(price, sell_count);
+                # 重置剩余资金
+                result['balance'] = format_float(result['balance'] + total);
+                # 如果当前股票持仓状态为零则是清仓，否则是卖出
+                type = 'clear' if stock['holdings'] == 0 else 'sell'
+                # 本次交易记录
+                stock_record = {
+                    'type': type,
+                    'date':  date,
+                    'price': price,
+                    'count': sell_count,
+                    'total': total,
+                    'balance': result['balance']
+                }
+                # 如果股票是持股状态，交易记录中对应股票的第 0 条记录必定是对应的买入记录
+                stock_records = result['records'][stock['stock_code']][0]
+                stock_records.append(stock_record)
+
+                # 如果没有卖空则还是持仓状态，append 到持仓股票列表中
+                if (stock_record['type'] != 'clear'):
+                    holdings_stocks.append(stock)
+
+            # 将没有卖出的股票赋值给 result['holdings_stocks']
+            result['holdings_stocks'] = holdings_stocks
+
+        # 不管是空仓还是持仓状态，如果手中可用资金超过 2000 元则准备交易。首先剔除当天不符合买入条件的股票，然后对符合条件的股票进行随机买入，如果没有合适的股票，则进入下一天（下一个循环）。
+        if (result['balance'] < 2000):
+            continue
+
+        for code in codes:
+            # 获取股票历史数据
+            history = get_daily_data(code, start_date=_start_date, end_date=_end_date, client=client)
+            history = history['data']
+
+            # 获取当前股票的索引
+            record_index = [index for index, item in enumerate(history) if item['date'] == date]
+            if (not record_index):
+                continue
+            record_index = record_index[0]
+            # 当前日数据
+            history_record = history[record_index]
+            # 上一日数据
+            prev_history_record = history[record_index - 1]
+
+            if (not history_record or not prev_history_record):
+                continue
+
+            macd = history_record['macd']
+            prevMacd = prev_history_record['macd']
+
+            if (not macd or not prevMacd):
+                continue
+
+            rsi6 = history_record['rsi6']
+            prevRsi6 = prev_history_record['rsi6']
+
+            # 是否超卖状态
+            # isOversold = rsi6 > prevRsi6;
+            isOversold = True
+
+            # MACD 是否上升
+            # isMacdUp = macd > prevMacd;
+            isMacdUp = True
+
+            # 价格是否上升（跌涨辐大于 0）
+            # isPriceUp = prev_history_record['change_percent'] > 2
+            isPriceUp = True
+
+            # 买入条件是否成立
+            isEstablish = isMacdUp and isPriceUp and isOversold
+
+            if (not isEstablish):
+                continue;
+
+            # 从 result['holdings_stocks'] 中找出当前股票
+            # 如果找不到则说明是新股票，需要初始化
+            stock = [item for item in result['holdings_stocks'] if item['stock_code'] == code]
+            if (len(stock) == 0):
+                stock = {
+                    'stock_code': code,
+                    'stock_name': history_record['stock_name'],
+                    'holdings': 0
+                }
+            else:
+                stock = stock[0]
+
+            opening = history_record['opening_price']
+            closing = history_record['closing_price']
+
+            # 单价
+            # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
+            price = format_float(closing + (closing - opening) * random.random())
+            stock['price'] = price
+
+            # 买入股票数量（手）
+            _count = math.floor(result['balance'] / (price * 100));
+            if (_count <= 0):
+                continue;
+
+            # 总金额
+            total = calculate_buy_cost(_count * price * 100);
+
+            # 动态计算买入数量以及总额
+            while (total > result['balance']):
+                _count = _count - 1;
+                total = calculate_buy_cost(_count * price * 100);
+
+            if (_count <= 0):
+                continue;
+
+            # 买入股票数量（股）
+            _count2 = _count * 100
+            type = 'create' if stock['holdings'] == 0 else 'buy'
+
+            # 当前股票持仓
+            stock['holdings'] = stock['holdings'] + _count2
+
+            # 重置剩余资金
+            result['balance'] = format_float(result['balance'] - total);
+
+            stock_record = {
+                'type': type,
+                'date':  date,
+                'price': price,
+                'count': _count2,
+                'total': total,
+                'balance': result['balance']
+            }
+
+            # 如果 result['records'] 中没有当前股票的记录，则初始化
+            if (not result['records'].get(stock['stock_code'])):
+                result['records'][stock['stock_code']] = []
+
+            # 如果是建仓，则在 result['records'] 中插入一条空记录
+            if (type == 'create'):
+                result['records'][stock['stock_code']].insert(0, [])
+
+            # 第 0 条记录必定是对应的买入记录
+            result['records'][stock['stock_code']][0].insert(0, stock_record)
+
+            # 不管是建仓还是买入，都需要将当前股票加入到 result['holdings_stocks'] 中
+            result['holdings_stocks'].append(stock)
+
+    # 修改持仓状态
+    result['status'] = 'long' if len(result['holdings_stocks']) > 0 else 'short'
+
+    # 计算市值
+    if (result['status'] == 'long'):
+        result['market_value'] = format_float(sum([item['holdings'] * item['price'] for item in result['holdings_stocks']]))
+
+    # 计算总资产
+    result['total_funds'] = format_float(result['balance'] + result['market_value'])
+
+
 
     # -------------------------
 
@@ -413,5 +626,5 @@ def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = 
     return {
         'message': '获取成功',
         'code': 0,
-        'data': []
+        'data': result
     }

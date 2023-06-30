@@ -86,7 +86,7 @@ def get_daily_data(code: str, start_date: str = '', end_date: str = '', client: 
         query['date']['$gte'] = start_date
 
     if (end_date):
-        query['date']['$lt'] = end_date
+        query['date']['$lte'] = end_date
 
 
     cursor = stock_history.find(query)
@@ -125,7 +125,7 @@ def get_report_dates(client: MongoClient = Depends(get_mongo_client)):
     return {"message": "获取成功", "code": 0, "data": convert_list_objectid_to_str(result)}
 
 
-@router.get('trade_dates', name='获取股票交易日', response_model=Any)
+@router.get('trade_dates', name='获取股票交易日', response_model=TradeDatesResponse)
 def get_trade_dates(client: MongoClient = Depends(get_mongo_client)):
     ''' 获取股票交易日 '''
     history_collection = client[DatabaseNames.STOCK.value][DatabaseCollectionNames.STOCKS_HISTORY.value]

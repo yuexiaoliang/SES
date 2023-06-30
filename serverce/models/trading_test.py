@@ -48,15 +48,22 @@ class MultiStocksResponse(ResponseBaseModel):
 
     data: List[StockSimulatedTrading] = Field(..., title='返回的数据')
 
+class MultiHybridStockTradingHoldingsStock(BaseModel):
+    """持仓股票"""
+    stock_code: str = Field(..., title='股票代码')
+    stock_name: str = Field(..., title='股票名称')
+    holdings: int = Field(..., title='持仓数量')
+    price: float = Field(..., title='持仓价格')
+
 class MultiHybridStockTrading(BaseModel):
     """股票模拟交易"""
-    stocks: str = Field(..., title='持仓股票')
+    holdings_stocks: List[MultiHybridStockTradingHoldingsStock] = Field(..., title='持仓股票')
     status: Union[Literal["long"], Literal["short"]] = Field(..., title='状态：long-持仓 short-空仓')
     balance: float = Field(..., title='剩余资金')
     raw_funds: float = Field(..., title='初始资金')
     market_value: float = Field(..., title='市值')
     total_funds: float = Field(..., title='总资产')
-    records: Dict[str, List[StockSimulatedTradingRecord]] = Field(..., title='所有股票的交易记录')
+    records: Dict[str, List[List[StockSimulatedTradingRecord]]] = Field(..., title='所有股票的交易记录')
 
 class MultiHybridStocksResponse(ResponseBaseModel):
     class config:
