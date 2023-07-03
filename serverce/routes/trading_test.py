@@ -13,7 +13,7 @@ from constants.enums import DatabaseNames, DatabaseCollectionNames
 from .stock import get_trade_dates, get_daily_data
 
 # 止损比例
-stopLossRatio = -0.025
+stopLossRatio = 0.03
 
 router = APIRouter()
 
@@ -104,6 +104,9 @@ def trading(data,  raw_funds: float = 10000):
         prev = data[index - 1]
         opening = item['opening_price']
         closing = item['closing_price']
+        highest_price = item['highest_price']
+        lowest_price = item['lowest_price']
+
         date = item['date']
 
         # 买入
@@ -119,16 +122,16 @@ def trading(data,  raw_funds: float = 10000):
             prevRsi6 = prev['rsi6']
 
             # RSI 是否上升
-            isRsiUp = rsi6 > item['rsi12'];
+            # isRsiUp = rsi6 > item['rsi12'];
             isRsiUp = True
 
             # MACD 是否上升
             isMacdUp = macd > prevMacd;
-            isMacdUp = True
+            # isMacdUp = True
 
 
             # 价格是否上升（跌涨辐大于 2）
-            isPriceUp = prev['change_percent'] > 0
+            # isPriceUp = prev['change_percent'] > 0
             isPriceUp = True
 
             # 买入条件成立
@@ -140,6 +143,7 @@ def trading(data,  raw_funds: float = 10000):
             # 单价
             # 当日收盘价 + (当日收盘价 - 当日开盘价) * 阈值
             price = format_float(closing + (closing - opening) * random.random())
+            price = closing
 
             # 买入股票数量（手）
             _count = math.floor(result['balance'] / (price * 100));
@@ -185,13 +189,13 @@ def trading(data,  raw_funds: float = 10000):
             ''' 卖出
             1. 动态亏损超过止损比率
             '''
-            if item['change_percent'] > stopLossRatio * 100:
+            if item['change_percent'] > -stopLossRatio * 100:
                 continue
 
             # 单价
             # 上一日收盘价 - (上一日收盘价 * 止损比例 + 上一日收盘价 * 阈值)
             prevClosing = prev['closing_price']
-            price = format_float(prevClosing - (prevClosing * stopLossRatio + prevClosing * 0.003 * random.random()))
+            price = format_float(prevClosing - (prevClosing * stopLossRatio))
 
             # 卖出总金额
             total = calculate_sell_cost(price, result['holdings']);
@@ -263,6 +267,7 @@ def single_stock(code: str, start_date:str = '', end_date: str = '', raw_funds: 
 
 @router.post('/multi', name='多只股票模拟交易测试', response_model=MultiStocksResponse)
 def multi_stocks(request: MultiStocksRequest = Body(...), client: MongoClient = Depends(get_mongo_client)):
+
     body = request.dict()
 
     codes, start_date, end_date, raw_funds = body['codes'], body['start_date'], body['end_date'], body['raw_funds']

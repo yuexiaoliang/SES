@@ -14,7 +14,7 @@ watch(
   () => list.value,
   async (val) => {
     const codes = val.map(item => item.stock_code)
-    console.log(`🚀 > file: list.vue:18 > codes:`, codes.join(','));
+    // console.log(`🚀 > file: list.vue:18 > codes:`, codes.join(','));
   }
 );
 const columns = ref([
